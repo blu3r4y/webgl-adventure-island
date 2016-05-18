@@ -4,6 +4,7 @@
 'use strict';
 
 var gl = null;
+//Camera struct that stores the camera rotation
 const camera = {
   rotation: {
     x: 0,
