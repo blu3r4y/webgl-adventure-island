@@ -42,7 +42,8 @@ loadResources({
   fs_shadow: 'shader/shadow.fs.glsl',
   vs_single: 'shader/single.vs.glsl',
   fs_single: 'shader/single.fs.glsl',
-  model: 'models/C-3PO.obj'
+  fs_island: 'shader/island.fs.glsl',
+  model: 'models/island.obj'
 }).then(function (resources /*an object containing our keys with the loaded resources*/) {
   init(resources);
 
@@ -59,81 +60,20 @@ function init(resources) {
   root = createSceneGraph(gl, resources);
 
   //create scenegraph without floor and simple shader
-  rootnofloor = new ShaderSGNode(createProgram(gl, resources.vs_single, resources.fs_single));
-  rootnofloor.append(rotateNode); //reuse model part
+  //rootnofloor = new ShaderSGNode(createProgram(gl, resources.vs_single, resources.fs_single));
+  //rootnofloor.append(rotateNode); //reuse model part
 
   initInteraction(gl.canvas);
 }
 
 function createSceneGraph(gl, resources) {
   //create scenegraph
-  const root = new ShaderSGNode(createProgram(gl, resources.vs_shadow, resources.fs_shadow));
-
+//  const root = new ShaderSGNode(createProgram(gl, resources.vs_shadow, resources.fs_shadow));
+  const root = new ShaderSGNode(createProgram(gl, resources.vs_shadow, resources.fs_island));
+  let island = new RenderSGNode(resources.model)
+  root.append(island);
   //add node for setting shadow parameters
-  shadowNode = new ShadowSGNode(renderTargetDepthTexture,3,framebufferWidth,framebufferHeight);
-  root.append(shadowNode);
 
-  //light debug helper function
-  function createLightSphere() {
-    return new ShaderSGNode(createProgram(gl, resources.vs_single, resources.fs_single), [
-      new RenderSGNode(makeSphere(.2,10,10))
-    ]);
-  }
-
-  {
-    //initialize light
-    lightNode = new LightSGNode(); //use now framework implementation of light node
-    lightNode.ambient = [0.2, 0.2, 0.2, 1];
-    lightNode.diffuse = [0.8, 0.8, 0.8, 1];
-    lightNode.specular = [1, 1, 1, 1];
-    lightNode.position = [0, 0, 0];
-
-    rotateLight = new TransformationSGNode(mat4.create());
-    translateLight = new TransformationSGNode(glm.translate(0,-3,3)); //translating the light is the same as setting the light position
-
-    rotateLight.append(translateLight);
-    translateLight.append(lightNode);
-    translateLight.append(createLightSphere()); //add sphere for debugging: since we use 0,0,0 as our light position the sphere is at the same position as the light source
-    shadowNode.append(rotateLight);
-  }
-
-  {
-    //initialize C3PO
-    let c3po = new MaterialSGNode([ //use now framework implementation of material node
-      new RenderSGNode(resources.model)
-    ]);
-    //gold
-    c3po.ambient = [0.24725, 0.1995, 0.0745, 1];
-    c3po.diffuse = [0.75164, 0.60648, 0.22648, 1];
-    c3po.specular = [0.628281, 0.555802, 0.366065, 1];
-    c3po.shininess = 0.4;
-
-    rotateNode = new TransformationSGNode(mat4.create(), [
-      new TransformationSGNode(glm.transform({ translate: [0,1, 0], rotateX : 180, scale: 0.8 }),  [
-        c3po
-      ])
-    ]);
-    shadowNode.append(rotateNode);
-  }
-
-  {
-    //initialize floor
-    let floor = new MaterialSGNode(
-                new TextureSGNode(renderTargetDepthTexture,2,
-                new RenderSGNode(makeRect(2,2))
-                )
-              );
-
-    //dark
-    floor.ambient = [0, 0, 0, 1];
-    floor.diffuse = [0.1, 0.1, 0.1, 1];
-    floor.specular = [0.5, 0.5, 0.5, 1];
-    floor.shininess = 50.0;
-
-    shadowNode.append(new TransformationSGNode(glm.transform({ translate: [0,1,0], rotateX: 90, scale: 2}), [
-      floor
-    ]));
-  }
 
   return root;
 }
@@ -143,8 +83,8 @@ function render(timeInMilliseconds) {
 
   //update animations
   //Note: We have to update all animations before generating the shadow map!
-  rotateNode.matrix = glm.rotateY(timeInMilliseconds*-0.01);
-  rotateLight.matrix = glm.rotateY(timeInMilliseconds*0.05);
+  //rotateNode.matrix = glm.rotateY(timeInMilliseconds*-0.01);
+  //rotateLight.matrix = glm.rotateY(timeInMilliseconds*0.05);
 
   //setup viewport
   gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
@@ -155,7 +95,7 @@ function render(timeInMilliseconds) {
   const context = createSGContext(gl);
   context.projectionMatrix = mat4.perspective(mat4.create(), 30, gl.drawingBufferWidth / gl.drawingBufferHeight, 0.01, 100);
   //very primitive camera implementation
-  let lookAtMatrix = mat4.lookAt(mat4.create(), [0,-1,-4], [0,0,0], [0,1,0]);
+  let lookAtMatrix = mat4.lookAt(mat4.create(), [0,0,-2], [0,0,0], [0,1,0]);
   let mouseRotateMatrix = mat4.multiply(mat4.create(),
                           glm.rotateX(camera.rotation.y),
                           glm.rotateY(camera.rotation.x));
