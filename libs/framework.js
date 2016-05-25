@@ -59,16 +59,7 @@ function loadResources(resources, callback) {
       req.send(null);
     }
 
-    const keys = Object.keys(resources);
-    if (keys.length === 0) {
-      if (callback) {
-        callback(result);
-      }
-      resolve(result);
-      return;
-    }
-
-    keys.forEach(function (key) {
+    function load(key) {
       var value = resources[key];
       if (isImageUrl(value)) {
         var image_1 = new Image();
@@ -84,7 +75,18 @@ function loadResources(resources, callback) {
       } else {
         ajax(key, value, String);
       }
-    });
+    }
+
+    const keys = Object.keys(resources);
+    if (keys.length === 0) {
+      if (callback) {
+        callback(result);
+      }
+      resolve(result);
+      return;
+    }
+
+    keys.forEach(load);
   });
 }
 /**
@@ -709,7 +711,7 @@ class AdvancedTextureSGNode extends SGNode {
   constructor(image, children ) {
       super(children);
       this.image = image;
-      this.textureUnit = 0;
+      this.textureunit = 0;
       this.uniform = 'u_tex';
       this.textureId = -1;
   }
@@ -734,7 +736,7 @@ class AdvancedTextureSGNode extends SGNode {
       this.init(context.gl);
     }
     //set additional shader parameters
-    gl.uniform1i(gl.getUniformLocation(context.shader, this.uniform), this.textureUnit);
+    gl.uniform1i(gl.getUniformLocation(context.shader, this.uniform), this.textureunit);
 
     //activate and bind texture
     gl.activeTexture(gl.TEXTURE0 + this.textureunit);
@@ -903,7 +905,7 @@ class MaterialSGNode extends SGNode {
  * a light node represents a light including light position and light properties (ambient, diffuse, specular)
  * the light position will be transformed according to the current model view matrix
  */
-class LightSGNode extends SGNode {
+class LightSGNode extends TransformationSGNode {
 
   constructor(position, children) {
     super(children);
@@ -957,6 +959,9 @@ class LightSGNode extends SGNode {
   render(context) {
     this.computeLightPosition(context);
     this.setLight(context);
+
+    //since this a transformation node update the matrix according to my position
+    this.matrix = glm.translate(this.position[0], this.position[1], this.position[2]);
     //render children
     super.render(context);
   }
@@ -1007,7 +1012,7 @@ var sg = {
     return sg.transform.apply(sg, [glm.rotateZ(degree)].concat([].slice.call(arguments).slice(1)));
   },
   draw: function (renderer) {
-    return new RenderNode(renderer, [].slice.call(arguments).slice(1));
+    return new RenderSGNode(renderer, [].slice.call(arguments).slice(1));
   },
   drawSphere: function (radius, latitudeBands, longitudeBands) {
     return sg.draw.apply(sg, [makeSphere(radius || 2, latitudeBands || 30, longitudeBands || 30)].concat([].slice.call(arguments).slice(3)));
