@@ -8,6 +8,10 @@ var gl = null;
 const camera = {
   rotation: {
     x: 0,
+    y: 0
+  },
+  pos: {
+    x: 0,
     y: 0,
     z: 10
   }
@@ -133,13 +137,13 @@ function render(timeInMilliseconds) {
   const context = createSGContext(gl);
   context.projectionMatrix = mat4.perspective(mat4.create(), 30, gl.drawingBufferWidth / gl.drawingBufferHeight, 0.01, 100);
   //very primitive camera implementation
-  let lookAtMatrix = mat4.lookAt(mat4.create(), [0,0, camera.rotation.z], [0,0,0], [0,1,0]);
+  let lookAtMatrix = mat4.lookAt(mat4.create(), [camera.pos.x, camera.pos.y, camera.pos.z], [0,0,0], [0,1,0]);
   let mouseRotateMatrix = mat4.multiply(mat4.create(),
                           glm.rotateX(camera.rotation.y),
                           glm.rotateY(camera.rotation.x));
   context.viewMatrix = mat4.multiply(mat4.create(), lookAtMatrix, mouseRotateMatrix);
-  if(camera.rotation.z > 0){
-      camera.rotation.z = camera.rotation.z - timeInMilliseconds*0.00001;
+  if(camera.pos.z > 0){
+      camera.pos.z = camera.pos.z - timeInMilliseconds*0.00001;
   }
   //get inverse view matrix to allow computing eye-to-light matrix
   context.invViewMatrix = mat4.invert(mat4.create(), context.viewMatrix);
