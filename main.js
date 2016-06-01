@@ -8,7 +8,8 @@ var gl = null;
 const camera = {
   rotation: {
     x: 0,
-    y: 0
+    y: 0,
+    z: 10
   }
 };
 
@@ -43,7 +44,8 @@ loadResources({
   vs_single: 'shader/single.vs.glsl',
   fs_single: 'shader/single.fs.glsl',
   fs_island: 'shader/island.fs.glsl',
-  model: 'models/island.obj'
+  island: 'models/island.obj',
+  vehicle: 'models/vehicle.obj'
 }).then(function (resources /*an object containing our keys with the loaded resources*/) {
   init(resources);
 
@@ -69,11 +71,47 @@ function init(resources) {
 function createSceneGraph(gl, resources) {
   //create scenegraph
 //  const root = new ShaderSGNode(createProgram(gl, resources.vs_shadow, resources.fs_shadow));
-  const root = new ShaderSGNode(createProgram(gl, resources.vs_shadow, resources.fs_island));
-  let island = new RenderSGNode(resources.model)
-  root.append(island);
-  //add node for setting shadow parameters
+  const root = new ShaderSGNode(createProgram(gl, resources.vs_shadow, resources.fs_shadow));
+  let islandsh = new ShaderSGNode(createProgram(gl, resources.vs_shadow, resources.fs_island));
+  let island = new RenderSGNode(resources.island);
+  islandsh.append(island);
+  let vehicle = new MaterialSGNode([ //use now framework implementation of material node
+    new RenderSGNode(resources.vehicle)
+  ]);
+  //gold
+  vehicle.ambient = [0.24725, 0.1995, 0.0745, 1];
+  vehicle.diffuse = [0.75164, 0.60648, 0.22648, 1];
+  vehicle.specular = [0.628281, 0.555802, 0.366065, 1];
+  vehicle.shininess = 0.4;
+  root.append(islandsh);
 
+  let rotateNode = new TransformationSGNode(mat4.create(), [
+      new TransformationSGNode(glm.transform({ translate: [0,0,0.1], rotateX : 0, scale: 0.5 }),  [
+       vehicle
+      ])
+    ]);
+  root.append(rotateNode);
+  //add node for setting shadow parameters
+  //initialize light
+  let light = new LightSGNode(); //use now framework implementation of light node
+  light.ambient = [0.2, 0.2, 0.2, 1];
+  light.diffuse = [0.8, 0.8, 0.8, 1];
+  light.specular = [1, 1, 1, 1];
+  light.position = [0, 0, 0];
+
+  function createLightSphere() {
+      return new ShaderSGNode(createProgram(gl, resources.vs_single, resources.fs_single), [
+        new RenderSGNode(makeSphere(.2,10,10))
+      ]);
+    }
+
+  rotateLight = new TransformationSGNode(mat4.create());
+  let translateLight = new TransformationSGNode(glm.translate(0,-2,2)); //translating the light is the same as setting the light position
+
+  rotateLight.append(translateLight);
+  translateLight.append(light);
+  translateLight.append(createLightSphere()); //add sphere for debugging: since we use 0,0,0 as our light position the sphere is at the same position as the light source
+  root.append(rotateLight);
 
   return root;
 }
@@ -95,13 +133,14 @@ function render(timeInMilliseconds) {
   const context = createSGContext(gl);
   context.projectionMatrix = mat4.perspective(mat4.create(), 30, gl.drawingBufferWidth / gl.drawingBufferHeight, 0.01, 100);
   //very primitive camera implementation
-  let lookAtMatrix = mat4.lookAt(mat4.create(), [0,0,-2], [0,0,0], [0,1,0]);
+  let lookAtMatrix = mat4.lookAt(mat4.create(), [0,0, camera.rotation.z], [0,0,0], [0,1,0]);
   let mouseRotateMatrix = mat4.multiply(mat4.create(),
                           glm.rotateX(camera.rotation.y),
                           glm.rotateY(camera.rotation.x));
   context.viewMatrix = mat4.multiply(mat4.create(), lookAtMatrix, mouseRotateMatrix);
-
-
+  if(camera.rotation.z > 0){
+      camera.rotation.z = camera.rotation.z - timeInMilliseconds*0.00001;
+  }
   //get inverse view matrix to allow computing eye-to-light matrix
   context.invViewMatrix = mat4.invert(mat4.create(), context.viewMatrix);
 
