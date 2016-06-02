@@ -41,6 +41,8 @@ var framebufferHeight = 1024;
 
 var lightViewProjectionMatrix;
 
+var userControlled = false;
+
 //load the required resources using a utility function
 loadResources({
   vs_shadow: 'shader/shadow.vs.glsl',
@@ -142,7 +144,7 @@ function render(timeInMilliseconds) {
                           glm.rotateX(camera.rotation.y),
                           glm.rotateY(camera.rotation.x));
   context.viewMatrix = mat4.multiply(mat4.create(), lookAtMatrix, mouseRotateMatrix);
-  if(camera.pos.z > 0){
+  if(camera.pos.z > 0 && !userControlled){
       camera.pos.z = camera.pos.z - timeInMilliseconds*0.00001;
   }
   //get inverse view matrix to allow computing eye-to-light matrix
@@ -190,9 +192,8 @@ function initInteraction(canvas) {
   //register globally
   document.addEventListener('keypress', function(event) {
     //https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent
-    if (event.code === 'KeyR') {
-      camera.rotation.x = 0;
-  		camera.rotation.y = 0;
+    if (event.code === 'KeyC') {
+      userControlled = !userControlled;
     }
   });
 }
