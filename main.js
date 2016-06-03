@@ -141,7 +141,7 @@ function render(timeInMilliseconds) {
   const context = createSGContext(gl);
   context.projectionMatrix = mat4.perspective(mat4.create(), 30, gl.drawingBufferWidth / gl.drawingBufferHeight, 0.01, 100);
   //very primitive camera implementation
-  let lookAtMatrix = mat4.lookAt(mat4.create(), [camera.pos.x, camera.pos.y, camera.pos.z], [0,0,0], [0,1,0]);
+  let lookAtMatrix = mat4.lookAt(mat4.create(), [camera.pos.x, camera.pos.y, camera.pos.z], [camera.pos.x, camera.pos.y, 0], [0,1,0]);
   let mouseRotateMatrix = mat4.multiply(mat4.create(),
                           glm.rotateX(camera.rotation.y),
                           glm.rotateY(camera.rotation.x));
@@ -208,10 +208,10 @@ function initInteraction(canvas) {
         camera.pos.z = camera.pos.z + zoom;
       }
       else if (event.code === 'ArrowRight') {
-        camera.pos.x = camera.pos.x + zoom;
+        camera.pos.x = camera.pos.x - zoom;
       }
       else if (event.code === 'ArrowLeft') {
-        camera.pos.x = camera.pos.x - zoom;
+        camera.pos.x = camera.pos.x + zoom;
       }
     }
   });
