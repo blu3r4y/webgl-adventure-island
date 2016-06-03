@@ -17,6 +17,8 @@ const camera = {
   }
 };
 
+var zoom = 0.02;
+
 //scene graph nodes
 var root = null;
 var rootnofloor = null;
@@ -145,7 +147,7 @@ function render(timeInMilliseconds) {
                           glm.rotateY(camera.rotation.x));
   context.viewMatrix = mat4.multiply(mat4.create(), lookAtMatrix, mouseRotateMatrix);
   if(camera.pos.z > 0 && !userControlled){
-      camera.pos.z = camera.pos.z - timeInMilliseconds*0.00001;
+      camera.pos.z = camera.pos.z - zoom;
   }
   //get inverse view matrix to allow computing eye-to-light matrix
   context.invViewMatrix = mat4.invert(mat4.create(), context.viewMatrix);
@@ -196,4 +198,23 @@ function initInteraction(canvas) {
       userControlled = !userControlled;
     }
   });
+  document.addEventListener('keydown', function(event) {
+    //https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent
+    if(userControlled) {
+      if (event.code === 'ArrowUp') {
+        camera.pos.z = camera.pos.z - zoom;
+      }
+      else if (event.code === 'ArrowDown') {
+        camera.pos.z = camera.pos.z + zoom;
+      }
+      else if (event.code === 'ArrowRight') {
+        camera.pos.x = camera.pos.x + zoom;
+      }
+      else if (event.code === 'ArrowLeft') {
+        camera.pos.x = camera.pos.x - zoom;
+      }
+    }
+  });
+
+
 }
