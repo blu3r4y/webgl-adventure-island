@@ -94,7 +94,7 @@ function createSceneGraph(gl, resources) {
   root.append(islandsh);
 
   let rotateNode = new TransformationSGNode(mat4.create(), [
-      new TransformationSGNode(glm.transform({ translate: [0,0,0.1], rotateX : 0, scale: 0.5 }),  [
+      new TransformationSGNode(glm.transform({ translate: [1,1,0.1], rotateX : 0, scale: 0.5 }),  [
        vehicle
       ])
     ]);
