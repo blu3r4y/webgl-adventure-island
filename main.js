@@ -53,7 +53,8 @@ loadResources({
   fs_single: 'shader/single.fs.glsl',
   fs_island: 'shader/island.fs.glsl',
   island: 'models/island.obj',
-  vehicle: 'models/vehicle.obj'
+  vehicle: 'models/vehicle.obj',
+  demo: 'models/demo.obj'
 }).then(function (resources /*an object containing our keys with the loaded resources*/) {
   init(resources);
 
@@ -85,13 +86,20 @@ function createSceneGraph(gl, resources) {
   islandsh.append(island);
   let vehicle = new MaterialSGNode([ //use now framework implementation of material node
     new RenderSGNode(resources.vehicle)
+
   ]);
   //gold
   vehicle.ambient = [0.24725, 0.1995, 0.0745, 1];
   vehicle.diffuse = [0.75164, 0.60648, 0.22648, 1];
   vehicle.specular = [0.628281, 0.555802, 0.366065, 1];
   vehicle.shininess = 0.4;
-  root.append(islandsh);
+
+  let rotateIsland = new TransformationSGNode(mat4.create(), [
+      new TransformationSGNode(glm.transform({ translate: [20,3,10], rotateX : 1, scale: 0.2, rotateZ : 180 }),  [
+       island
+      ])
+    ]);
+    root.append(rotateIsland);
 
   let rotateNode = new TransformationSGNode(mat4.create(), [
       new TransformationSGNode(glm.transform({ translate: [1,1,0.1], rotateX : 0, scale: 0.5 }),  [
@@ -201,16 +209,16 @@ function initInteraction(canvas) {
   document.addEventListener('keydown', function(event) {
     //https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent
     if(userControlled) {
-      if (event.code === 'ArrowUp') {
+      if (event.code === 'ArrowUp' || event.code === 'KeyW') {
         camera.pos.z = camera.pos.z - zoom;
       }
-      else if (event.code === 'ArrowDown') {
+      else if (event.code === 'ArrowDown' || event.code === 'KeyS') {
         camera.pos.z = camera.pos.z + zoom;
       }
-      else if (event.code === 'ArrowRight') {
+      else if (event.code === 'ArrowRight' || event.code === 'KeyD') {
         camera.pos.x = camera.pos.x - zoom;
       }
-      else if (event.code === 'ArrowLeft') {
+      else if (event.code === 'ArrowLeft' || event.code === 'KeyA') {
         camera.pos.x = camera.pos.x + zoom;
       }
     }
