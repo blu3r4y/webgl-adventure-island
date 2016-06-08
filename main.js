@@ -17,7 +17,7 @@ const camera = {
   }
 };
 
-var zoom = 0.02;
+var zoom = 0.2;
 
 //scene graph nodes
 var root = null;
@@ -52,9 +52,10 @@ loadResources({
   vs_single: 'shader/single.vs.glsl',
   fs_single: 'shader/single.fs.glsl',
   fs_island: 'shader/island.fs.glsl',
-  island: 'models/island.obj',
-  vehicle: 'models/vehicle.obj',
-  demo: 'models/demo.obj'
+  fs_red_dot: 'shader/red_dot.fs.glsl',
+  island_body: 'models/island_body.obj',
+  island_plane: 'models/island_plane.obj',
+  vehicle: 'models/vehicle.obj'
 }).then(function (resources /*an object containing our keys with the loaded resources*/) {
   init(resources);
 
@@ -81,25 +82,54 @@ function createSceneGraph(gl, resources) {
   //create scenegraph
 //  const root = new ShaderSGNode(createProgram(gl, resources.vs_shadow, resources.fs_shadow));
   const root = new ShaderSGNode(createProgram(gl, resources.vs_shadow, resources.fs_shadow));
-  let islandsh = new ShaderSGNode(createProgram(gl, resources.vs_shadow, resources.fs_island));
-  let island = new RenderSGNode(resources.island);
-  islandsh.append(island);
+  //let islandsh = new ShaderSGNode(createProgram(gl, resources.vs_shadow, resources.fs_island));
+  //let island = new RenderSGNode(resources.island);
+  //islandsh.append(island);
   let vehicle = new MaterialSGNode([ //use now framework implementation of material node
     new RenderSGNode(resources.vehicle)
 
   ]);
+
+  let island_plane = new MaterialSGNode([ //use now framework implementation of material node
+	new RenderSGNode(resources.island_plane)
+
+  ]);
+
+  let island_body = new MaterialSGNode([ //use now framework implementation of material node
+   new RenderSGNode(resources.island_body)
+
+  ]);
+
   //gold
   vehicle.ambient = [0.24725, 0.1995, 0.0745, 1];
   vehicle.diffuse = [0.75164, 0.60648, 0.22648, 1];
   vehicle.specular = [0.628281, 0.555802, 0.366065, 1];
   vehicle.shininess = 0.4;
 
-  let rotateIsland = new TransformationSGNode(mat4.create(), [
-      new TransformationSGNode(glm.transform({ translate: [20,3,10], rotateX : 1, scale: 0.2, rotateZ : 180 }),  [
-       island
+  island_plane.ambient = [0, 0.6, 0, 1];
+  island_plane.diffuse = [0, 0.6, 0, 1];
+  island_plane.specular = [0, 0.6, 0, 1];
+  island_plane.shininess = 0.4;
+
+
+	island_body.ambient = [0.4, 0.4, 0, 1];
+	island_body.diffuse = [0.4, 0.4, 0, 1];
+	island_body.specular = [0.4, 0.4, 0, 1];
+	island_body.shininess = 1.0;
+
+  let rotateIslandPlane = new TransformationSGNode(mat4.create(), [
+      new TransformationSGNode(glm.transform({ translate: [0,0,0], rotateX : 0, scale: 1.0, rotateZ : 0 }),  [
+       island_plane
       ])
-    ]);
-    root.append(rotateIsland);
+  ]);
+    root.append(rotateIslandPlane);
+
+	let rotateIslandBody = new TransformationSGNode(mat4.create(), [
+		new TransformationSGNode(glm.transform({ translate: [0,0,0], rotateX : 0, scale: 1.0, rotateZ : 0 }),  [
+		 island_body
+		])
+	]);
+	  root.append(rotateIslandBody);
 
   let rotateNode = new TransformationSGNode(mat4.create(), [
       new TransformationSGNode(glm.transform({ translate: [1,1,0.1], rotateX : 0, scale: 0.5 }),  [
@@ -109,27 +139,48 @@ function createSceneGraph(gl, resources) {
   root.append(rotateNode);
   //add node for setting shadow parameters
   //initialize light
-  let light = new LightSGNode(); //use now framework implementation of light node
-  light.ambient = [0.2, 0.2, 0.2, 1];
-  light.diffuse = [0.8, 0.8, 0.8, 1];
-  light.specular = [1, 1, 1, 1];
-  light.position = [0, 0, 0];
 
-  function createLightSphere() {
-      return new ShaderSGNode(createProgram(gl, resources.vs_single, resources.fs_single), [
-        new RenderSGNode(makeSphere(.2,10,10))
-      ]);
-    }
 
-  rotateLight = new TransformationSGNode(mat4.create());
-  let translateLight = new TransformationSGNode(glm.translate(0,-2,2)); //translating the light is the same as setting the light position
 
-  rotateLight.append(translateLight);
-  translateLight.append(light);
-  translateLight.append(createLightSphere()); //add sphere for debugging: since we use 0,0,0 as our light position the sphere is at the same position as the light source
-  root.append(rotateLight);
+
+// mark the point [0,0,0] for debugging purpose
+	let centerPoint = new TransformationSGNode(mat4.create(), [
+		new TransformationSGNode(glm.translate(0,0,0), [
+			new ShaderSGNode(createProgram(gl, resources.vs_shadow, resources.fs_red_dot), [
+	          new RenderSGNode(makeSphere(.1,10,10))
+	        ])
+		])
+	]);
+    root.append(centerPoint);
+
+  root.append(makeLight(gl, resources, 0, 100, 0));
+  //root.append(makeLight(gl, resources, 0, -100, 0));
 
   return root;
+}
+
+function makeLight(gl, resources, x, y, z)
+{
+	function createLightSphere() {
+        return new ShaderSGNode(createProgram(gl, resources.vs_single, resources.fs_single), [
+          new RenderSGNode(makeSphere(.2,10,10))
+        ]);
+      }
+
+	let light = new LightSGNode(); //use now framework implementation of light node
+    light.ambient = [0, 0, 0, 1];
+    light.diffuse = [1, 1, 1, 1];
+    light.specular = [1, 1, 1, 1];
+    light.position = [0, 0, 0];
+
+	let rotateLight = new TransformationSGNode(mat4.create());
+	let translateLight = new TransformationSGNode(glm.translate(x,y,z)); //translating the light is the same as setting the light position
+
+	rotateLight.append(translateLight);
+	translateLight.append(light);
+	translateLight.append(createLightSphere()); //add sphere for debugging: since we use 0,0,0 as our light position the sphere is at the same position as the light source
+
+	return rotateLight;
 }
 
 function render(timeInMilliseconds) {
