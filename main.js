@@ -43,19 +43,22 @@ var framebufferHeight = 1024;
 
 var lightViewProjectionMatrix;
 
-var userControlled = false;
+var userControlled = true;
 
 //load the required resources using a utility function
 loadResources({
-  vs_shadow: 'shader/shadow.vs.glsl',
-  fs_shadow: 'shader/shadow.fs.glsl',
+  vs_gouraud: 'shader/gouraud.vs.glsl',
+  fs_gouraud: 'shader/gouraud.fs.glsl',
+  vs_phong: 'shader/phong.vs.glsl',
+  fs_phong: 'shader/phong.fs.glsl',
   vs_single: 'shader/single.vs.glsl',
   fs_single: 'shader/single.fs.glsl',
-  fs_island: 'shader/island.fs.glsl',
-  fs_red_dot: 'shader/red_dot.fs.glsl',
+  vs_cross: 'shader/cross.vs.glsl',
+  fs_cross: 'shader/cross.fs.glsl',
   island_body: 'models/island_body.obj',
   island_plane: 'models/island_plane.obj',
-  vehicle: 'models/vehicle.obj'
+  vehicle: 'models/vehicle.obj',
+  cross: 'models/cross.obj'
 }).then(function (resources /*an object containing our keys with the loaded resources*/) {
   init(resources);
 
@@ -81,7 +84,7 @@ function init(resources) {
 function createSceneGraph(gl, resources) {
   //create scenegraph
 //  const root = new ShaderSGNode(createProgram(gl, resources.vs_shadow, resources.fs_shadow));
-  const root = new ShaderSGNode(createProgram(gl, resources.vs_shadow, resources.fs_shadow));
+  const root = new ShaderSGNode(createProgram(gl, resources.vs_phong, resources.fs_phong));
   //let islandsh = new ShaderSGNode(createProgram(gl, resources.vs_shadow, resources.fs_island));
   //let island = new RenderSGNode(resources.island);
   //islandsh.append(island);
@@ -90,9 +93,9 @@ function createSceneGraph(gl, resources) {
 
   ]);
 
-  let island_plane = new MaterialSGNode([ //use now framework implementation of material node
-	new RenderSGNode(resources.island_plane)
-
+  let island_plane =
+        new MaterialSGNode([ //use now framework implementation of material node
+      new RenderSGNode(resources.island_plane)
   ]);
 
   let island_body = new MaterialSGNode([ //use now framework implementation of material node
@@ -142,19 +145,25 @@ function createSceneGraph(gl, resources) {
 
 
 
+  let crossMaterial = new ShaderSGNode(createProgram(gl, resources.vs_cross, resources.fs_cross), [
+    new RenderSGNode(resources.cross/*makeSphere(.1,10,10)*/)
+  ]);
+
+  crossMaterial.ambient = [1.0, 0, 0, 1];
+  crossMaterial.diffuse = [1.0, 0, 0, 1];
+  crossMaterial.specular = [1.0, 0, 0, 1];
+  crossMaterial.shininess = 1.0;
 
 // mark the point [0,0,0] for debugging purpose
 	let centerPoint = new TransformationSGNode(mat4.create(), [
-		new TransformationSGNode(glm.translate(0,0,0), [
-			new ShaderSGNode(createProgram(gl, resources.vs_shadow, resources.fs_red_dot), [
-	          new RenderSGNode(makeSphere(.1,10,10))
-	        ])
+		new TransformationSGNode(glm.transform({ translate: [0,0,0], scale: 0.05 }), [
+          crossMaterial
 		])
 	]);
     root.append(centerPoint);
 
   root.append(makeLight(gl, resources, 0, 100, 0));
-  //root.append(makeLight(gl, resources, 0, -100, 0));
+  root.append(makeLight(gl, resources, 0, -100, 0));
 
   return root;
 }

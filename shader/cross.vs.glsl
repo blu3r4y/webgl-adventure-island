@@ -77,9 +77,9 @@ void main()
     vec4 eyePosition = u_modelView * vec4(a_position,1);
     vec3 normalVec = u_normalMatrix * a_normal;
     vec3 eyeVec = -eyePosition.xyz;
-    vec3 lightVec = vec3(1, 1, 1) - eyePosition.xyz;
+    vec3 lightVec = vec3(0, 0, 0) - eyePosition.xyz;
 
-    Material material = red;
+    Material material = neutral;
 
     if (a_position.y > 2.) material = green;
     else if (a_position.x > 2.) material = blue;
