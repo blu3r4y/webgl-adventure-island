@@ -17,34 +17,13 @@ const camera = {
   }
 };
 
-var zoom = 0.2;
-
 //scene graph nodes
 var root = null;
-var rootnofloor = null;
-var translateLight;
-var rotateLight;
-var lightNode;
 var vehicleNode;
-var shadowNode;
 var pyramidNode;
 
-var translate;
-var renderFloor;
-
-//textures
-var envcubetexture;
-var renderTargetColorTexture;
-var renderTargetDepthTexture;
-
-//framebuffer variables
-var renderTargetFramebuffer;
-var framebufferWidth = 1024;
-var framebufferHeight = 1024;
-
-var lightViewProjectionMatrix;
-
 var userControlled = false;
+var zoom = 0.2;
 
 //load the required resources using a utility function
 loadResources({
@@ -77,10 +56,6 @@ function init(resources) {
 
   //create scenegraph
   root = createSceneGraph(gl, resources);
-
-  //create scenegraph without floor and simple shader
-  //rootnofloor = new ShaderSGNode(createProgram(gl, resources.vs_single, resources.fs_single));
-  //rootnofloor.append(vehicleNode); //reuse model part
 
   initInteraction(gl.canvas);
 }
@@ -233,7 +208,7 @@ function render(timeInMilliseconds) {
   const context = createSGContext(gl);
   context.projectionMatrix = mat4.perspective(mat4.create(), 30, gl.drawingBufferWidth / gl.drawingBufferHeight, 0.01, 100);
   //very primitive camera implementation
-  let lookAtMatrix = mat4.lookAt(mat4.create(), [camera.pos.x, camera.pos.y, camera.pos.z], [camera.pos.x, camera.pos.y, 0], [0,1,0]);
+  let lookAtMatrix = mat4.lookAt(mat4.create(), vec3(camera.pos.x, camera.pos.y, camera.pos.z), vec3(camera.pos.x, camera.pos.y, 0), vec3(0,1,0));
   let mouseRotateMatrix = mat4.multiply(mat4.create(),
                           glm.rotateX(camera.rotation.y),
                           glm.rotateY(camera.rotation.x));
