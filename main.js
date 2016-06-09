@@ -95,12 +95,12 @@ function createSceneGraph(gl, resources) {
   let rotateIslandBody = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({ translate: [0,0,0], scale: 1.0 }), [ islandBody ]) ]);
   root.append(rotateIslandBody);
 
-  let waterDemo = new MaterialSGNode([ new RenderSGNode(makeRect(8.4, 8.9)) ]);
+  let waterDemo = new MaterialSGNode([ new RenderSGNode(makeRect(9.4, 8.9)) ]);
   waterDemo.ambient = [0.3, 0.15, 0.12, 0.3];
   waterDemo.diffuse = [0.52, 0.86, 0.98, 0.5];
   waterDemo.specular = [0.1, 0.2, 0.25, 0.5];
   waterDemo.shininess = 1.0;
-  let rotateWaterDemo = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({ translate: [-3,-1,-3], rotateX : 90, rotateZ : 40, scale: 1.0 }), [ waterDemo ]) ]);
+  let rotateWaterDemo = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({ translate: [-2.2,-1,-2.2], rotateX : 90, rotateZ : 40, scale: 1.0 }), [ waterDemo ]) ]);
   root.append(rotateWaterDemo);
 
   // coordinate cross for debugging
@@ -208,7 +208,7 @@ function render(timeInMilliseconds) {
   const context = createSGContext(gl);
   context.projectionMatrix = mat4.perspective(mat4.create(), 30, gl.drawingBufferWidth / gl.drawingBufferHeight, 0.01, 100);
   //very primitive camera implementation
-  let lookAtMatrix = mat4.lookAt(mat4.create(), vec3(camera.pos.x, camera.pos.y, camera.pos.z), vec3(camera.pos.x, camera.pos.y, 0), vec3(0,1,0));
+  let lookAtMatrix = mat4.lookAt(mat4.create(), vec3.fromValues(camera.pos.x, camera.pos.y, camera.pos.z), vec3.fromValues(camera.pos.x, camera.pos.y, 0), vec3.fromValues(0,1,0));
   let mouseRotateMatrix = mat4.multiply(mat4.create(),
                           glm.rotateX(camera.rotation.y),
                           glm.rotateY(camera.rotation.x));
