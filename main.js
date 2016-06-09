@@ -36,12 +36,16 @@ loadResources({
   vs_cross: 'shader/cross.vs.glsl',
   fs_cross: 'shader/cross.fs.glsl',
   vs_tex: 'shader/texture.vs.glsl',
+  vs_tex3d: 'shader/texture3d.vs.glsl',
   fs_tex: 'shader/texture.fs.glsl',
   island_body: 'models/island_body.obj',
   island_plane: 'models/island_plane.obj',
   vehicle: 'models/vehicle.obj',
   cross: 'models/cross.obj',
-  tree: 'models/tree2.png'
+  tex_tree: 'models/tree2.png',
+  tex_grass: 'models/grass.jpg',
+  tex_test: 'models/tex_test.jpg',
+  tex_dry: 'models/dry.jpg'
 }).then(function (resources /*an object containing our keys with the loaded resources*/) {
   init(resources);
 
@@ -78,20 +82,20 @@ function createSceneGraph(gl, resources) {
   vehicle.shininess = 0.4;
 
   // island top side
-  let islandPlane = new MaterialSGNode([ new RenderSGNode(resources.island_plane) ]);
-  islandPlane.ambient = [0, 0.3, 0, 1];
+  let islandPlane = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex), [ new MaterialSGNode([ new AdvancedTextureSGNode(resources.tex_grass, [ new RenderSGNode(resources.island_plane) ]) ]) ]);
+  /*islandPlane.ambient = [0, 0.3, 0, 1];
   islandPlane.diffuse = [0.52, 0.86, 0.12, 1];
   islandPlane.specular = [0.1, 0.2, 0.15, 0.];
-  islandPlane.shininess = 1.0;
+  islandPlane.shininess = 1.0;*/
   let rotateIslandPlane = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({ translate: [0,0,0], scale: 1.0 }), [ islandPlane ]) ]);
   root.append(rotateIslandPlane);
 
   // lower part of the island
-  let islandBody = new MaterialSGNode([ new RenderSGNode(resources.island_body) ]);
-  islandPlane.ambient = [0.3, 0.35, 0.58, 1];
-  islandPlane.diffuse = [0.52, 0.86, 0.12, 1];
-  islandPlane.specular = [0.1, 0.2, 0.15, 0.];
-  islandPlane.shininess = 1.0;
+  let islandBody = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex), [ new MaterialSGNode([ new AdvancedTextureSGNode(resources.tex_dry, [ new RenderSGNode(resources.island_body) ]) ]) ]);
+  /*islandBody.ambient = [0.24725, 0.1995, 0.2745, 1];
+  islandBody.diffuse = [0.75164, 0.60648, 0.42648, 1];
+  islandBody.specular = [0.628281, 0.555802, 0.666065, 1];
+  islandBody.shininess = 0.9;*/
   let rotateIslandBody = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({ translate: [0,0,0], scale: 1.0 }), [ islandBody ]) ]);
   root.append(rotateIslandBody);
 
@@ -107,8 +111,8 @@ function createSceneGraph(gl, resources) {
   let coordinateCross = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({translate: [0, 0, 0], scale: 0.05}), [ new ShaderSGNode(createProgram(gl, resources.vs_cross, resources.fs_cross), [ new RenderSGNode(resources.cross) ]) ]) ]);
   root.append(coordinateCross);
 
-  // tree billboard
-  let billboard = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({ translate: [2, 1, 8], scale: 0.75, rotateX : -90, rotateZ : -90 }),  [new ShaderSGNode(createProgram(gl, resources.vs_tex, resources.fs_tex), [new MaterialSGNode([new AdvancedTextureSGNode(resources.tree, [new RenderSGNode(makeBillboard())])])])])]);
+  // tex_tree billboard
+  let billboard = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({ translate: [2, 1, 8], scale: 0.75, rotateX : -90, rotateZ : -90 }),  [new ShaderSGNode(createProgram(gl, resources.vs_tex, resources.fs_tex), [new MaterialSGNode([new AdvancedTextureSGNode(resources.tex_tree, [new RenderSGNode(makeBillboard())])])])])]);
   root.append(billboard);
 
   vehicleNode = new TransformationSGNode(mat4.create(), [
@@ -122,8 +126,8 @@ function createSceneGraph(gl, resources) {
   root.append(vehicleNode);
 
   // main light sources
-  root.append(makeLight(gl, resources, 0, 100, 0));
-  root.append(makeLight(gl, resources, 0, -100, 0));
+  root.append(makeLight(gl, resources, 0, 10, 0));
+  root.append(makeLight(gl, resources, 0, -20, 0));
 
   return root;
 }
