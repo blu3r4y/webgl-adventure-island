@@ -48,15 +48,20 @@ var userControlled = false;
 
 //load the required resources using a utility function
 loadResources({
-  vs_shadow: 'shader/shadow.vs.glsl',
-  fs_shadow: 'shader/shadow.fs.glsl',
+  vs_gouraud: 'shader/gouraud.vs.glsl',
+  fs_gouraud: 'shader/gouraud.fs.glsl',
+  vs_phong: 'shader/phong.vs.glsl',
+  fs_phong: 'shader/phong.fs.glsl',
   vs_single: 'shader/single.vs.glsl',
   fs_single: 'shader/single.fs.glsl',
-  fs_island: 'shader/island.fs.glsl',
+  vs_cross: 'shader/cross.vs.glsl',
+  fs_cross: 'shader/cross.fs.glsl',
   vs_tex: 'shader/texture.vs.glsl',
   fs_tex: 'shader/texture.fs.glsl',
-  island: 'models/island.obj',
+  island_body: 'models/island_body.obj',
+  island_plane: 'models/island_plane.obj',
   vehicle: 'models/vehicle.obj',
+  cross: 'models/cross.obj',
   tree: 'models/tree2.png'
 }).then(function (resources /*an object containing our keys with the loaded resources*/) {
   init(resources);
@@ -82,6 +87,11 @@ function init(resources) {
 
 function createSceneGraph(gl, resources) {
   //create scenegraph
+//  const root = new ShaderSGNode(createProgram(gl, resources.vs_shadow, resources.fs_shadow));
+  const root = new ShaderSGNode(createProgram(gl, resources.vs_phong, resources.fs_phong));
+  //let islandsh = new ShaderSGNode(createProgram(gl, resources.vs_shadow, resources.fs_island));
+  //let island = new RenderSGNode(resources.island);
+  //islandsh.append(island);
   const root = new ShaderSGNode(createProgram(gl, resources.vs_shadow, resources.fs_shadow));
   pyramidNode = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({ translate: [0,0,0.5], scale: 0.5 }),  [ new RenderSGNode(makePyramid())])]);
   let vehicle = new MaterialSGNode([ //use now framework implementation of material node
@@ -97,6 +107,52 @@ function createSceneGraph(gl, resources) {
   let island = new RenderSGNode(resources.island);
   root.append(island);
 
+
+  let island_plane =
+      new MaterialSGNode([ //use now framework implementation of material node
+        new RenderSGNode(resources.island_plane)
+      ]);
+
+  let island_body = new MaterialSGNode([ //use now framework implementation of material node
+    new RenderSGNode(resources.island_body)
+
+  ]);
+
+  island_plane.ambient = [0, 0.6, 0, 1];
+  island_plane.diffuse = [0, 0.6, 0, 1];
+  island_plane.specular = [0, 0.6, 0, 1];
+  island_plane.shininess = 0.4;
+
+
+  island_body.ambient = [0.4, 0.4, 0, 1];
+  island_body.diffuse = [0.4, 0.4, 0, 1];
+  island_body.specular = [0.4, 0.4, 0, 1];
+  island_body.shininess = 1.0;
+
+  let rotateIslandPlane = new TransformationSGNode(mat4.create(), [
+    new TransformationSGNode(glm.transform({ translate: [0,0,0], rotateX : 0, scale: 1.0, rotateZ : 0 }),  [
+      island_plane
+    ])
+  ]);
+  root.append(rotateIslandPlane);
+
+  let rotateIslandBody = new TransformationSGNode(mat4.create(), [
+    new TransformationSGNode(glm.transform({ translate: [0,0,0], rotateX : 0, scale: 1.0, rotateZ : 0 }),  [
+      island_body
+    ])
+  ]);
+  root.append(rotateIslandBody);
+
+  let rotateNode = new TransformationSGNode(mat4.create(), [
+    new TransformationSGNode(glm.transform({ translate: [1,1,0.1], rotateX : 0, scale: 0.5 }),  [
+      vehicle
+    ])
+  ]);
+  root.append(rotateNode);
+  
+  
+  
+
   let billboard = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({ translate: [-2,-2,0.5], scale: 0.25 }),  [new ShaderSGNode(createProgram(gl, resources.vs_tex, resources.fs_tex), [new MaterialSGNode([new AdvancedTextureSGNode(resources.tree, [new RenderSGNode(makeBillboard())])])])])]);
   root.append(billboard);
   //add node for setting shadow parameters
@@ -106,6 +162,27 @@ function createSceneGraph(gl, resources) {
   light.diffuse = [0.8, 0.8, 0.8, 1];
   light.specular = [1, 1, 1, 1];
   light.position = [0,-0.5,0.25];
+
+  let crossMaterial = new ShaderSGNode(createProgram(gl, resources.vs_cross, resources.fs_cross), [
+    new RenderSGNode(resources.cross/*makeSphere(.1,10,10)*/)
+  ]);
+
+  crossMaterial.ambient = [1.0, 0, 0, 1];
+  crossMaterial.diffuse = [1.0, 0, 0, 1];
+  crossMaterial.specular = [1.0, 0, 0, 1];
+  crossMaterial.shininess = 1.0;
+
+// mark the point [0,0,0] for debugging purpose
+  let centerPoint = new TransformationSGNode(mat4.create(), [
+    new TransformationSGNode(glm.transform({ translate: [0,0,0], scale: 0.05 }), [
+      crossMaterial
+    ])
+  ]);
+  root.append(centerPoint);
+
+  root.append(makeLight(gl, resources, 0, 100, 0));
+  root.append(makeLight(gl, resources, 0, -100, 0));
+
 
   function createLightSphere() {
       return new ShaderSGNode(createProgram(gl, resources.vs_single, resources.fs_single), [
@@ -132,6 +209,30 @@ function createSceneGraph(gl, resources) {
     ]);
   root.append(vehicleNode);
   return root;
+}
+
+function makeLight(gl, resources, x, y, z)
+{
+  function createLightSphere() {
+    return new ShaderSGNode(createProgram(gl, resources.vs_single, resources.fs_single), [
+      new RenderSGNode(makeSphere(.2,10,10))
+    ]);
+  }
+
+  let light = new LightSGNode(); //use now framework implementation of light node
+  light.ambient = [0, 0, 0, 1];
+  light.diffuse = [1, 1, 1, 1];
+  light.specular = [1, 1, 1, 1];
+  light.position = [0, 0, 0];
+
+  let rotateLight = new TransformationSGNode(mat4.create());
+  let translateLight = new TransformationSGNode(glm.translate(x,y,z)); //translating the light is the same as setting the light position
+
+  rotateLight.append(translateLight);
+  translateLight.append(light);
+  translateLight.append(createLightSphere()); //add sphere for debugging: since we use 0,0,0 as our light position the sphere is at the same position as the light source
+
+  return rotateLight;
 }
 
 function makeVehicle() {
@@ -253,16 +354,16 @@ function initInteraction(canvas) {
   document.addEventListener('keydown', function(event) {
     //https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent
     if(userControlled) {
-      if (event.code === 'ArrowUp') {
+      if (event.code === 'ArrowUp' || event.code === 'KeyW') {
         camera.pos.z = camera.pos.z - zoom;
       }
-      else if (event.code === 'ArrowDown') {
+      else if (event.code === 'ArrowDown' || event.code === 'KeyS') {
         camera.pos.z = camera.pos.z + zoom;
       }
-      else if (event.code === 'ArrowRight') {
+      else if (event.code === 'ArrowRight' || event.code === 'KeyD') {
         camera.pos.x = camera.pos.x - zoom;
       }
-      else if (event.code === 'ArrowLeft') {
+      else if (event.code === 'ArrowLeft' || event.code === 'KeyA') {
         camera.pos.x = camera.pos.x + zoom;
       }
     }
