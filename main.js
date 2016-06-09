@@ -143,7 +143,7 @@ function makeVehicle() {
   return {
     position: position,
     normal: normal,
-    texture: null,
+    texture: texturecoordinates,
     index: index
   };
 }
