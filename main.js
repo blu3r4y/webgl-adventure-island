@@ -37,6 +37,7 @@ loadResources({
   vs_cross: 'shader/cross.vs.glsl',
   fs_cross: 'shader/cross.fs.glsl',
   vs_tex: 'shader/texture.vs.glsl',
+  fs_tex3d: 'shader/texture3d.fs.glsl',
   vs_tex3d: 'shader/texture3d.vs.glsl',
   fs_tex: 'shader/texture.fs.glsl',
   island_body: 'models/island_body.obj',
@@ -70,6 +71,14 @@ function createSceneGraph(gl, resources) {
   // phong shader as root
   const root = new ShaderSGNode(createProgram(gl, resources.vs_phong, resources.fs_phong));
 
+  // y axis of light source does not work as expected somehow
+  let mainLight1 = makeLight(gl, resources, 0, -10, 0);
+  let mainLight2 = makeLight(gl, resources, 0, 100, 0);
+
+  // main light sources
+  //root.append(mainLight2);  // lower light - uncommented because our shaders only look for one light source at the moment
+  root.append(mainLight1);  // upper light
+
   pyramidNode = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({ translate: [0,0,0.5], scale: 0.5 }),  [ new RenderSGNode(makePyramid())])]);
   let vehicle = new MaterialSGNode([
     new RenderSGNode(makeVehicle()),
@@ -81,21 +90,22 @@ function createSceneGraph(gl, resources) {
   vehicle.specular = [0.628281, 0.555802, 0.666065, 1];
   vehicle.shininess = 0.4;
 
-  // island top side
-  let islandPlane = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex), [ new MaterialSGNode([ new AdvancedTextureSGNode(resources.tex_grass, [ new RenderSGNode(resources.island_plane) ]) ]) ]);
-  /*islandPlane.ambient = [0, 0.3, 0, 1];
+  let islandPlane = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [ new MaterialSGNode([ new AdvancedTextureSGNode(resources.tex_grass, [ new RenderSGNode(resources.island_plane) ]) ]) ]);
+  islandPlane.ambient = [0, 0.3, 0, 1];
   islandPlane.diffuse = [0.52, 0.86, 0.12, 1];
   islandPlane.specular = [0.1, 0.2, 0.15, 0.];
-  islandPlane.shininess = 1.0;*/
+  islandPlane.shininess = 1.0;
+  islandPlane.append(mainLight1);
   let rotateIslandPlane = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({ translate: [0,0,0], scale: 1.0 }), [ islandPlane ]) ]);
   root.append(rotateIslandPlane);
 
   // lower part of the island
-  let islandBody = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex), [ new MaterialSGNode([ new AdvancedTextureSGNode(resources.tex_dry, [ new RenderSGNode(resources.island_body) ]) ]) ]);
-  /*islandBody.ambient = [0.24725, 0.1995, 0.2745, 1];
-  islandBody.diffuse = [0.75164, 0.60648, 0.42648, 1];
-  islandBody.specular = [0.628281, 0.555802, 0.666065, 1];
-  islandBody.shininess = 0.9;*/
+  let islandBody = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [ new MaterialSGNode([ new AdvancedTextureSGNode(resources.tex_dry, [ new RenderSGNode(resources.island_body) ]) ]) ]);
+  islandBody.ambient = [0, 0.3, 0, 1];
+  islandBody.diffuse = [0.52, 0.86, 0.12, 1];
+  islandBody.specular = [0.1, 0.2, 0.15, 0.];
+  islandBody.shininess = 1.0;
+  islandBody.append(mainLight2);
   let rotateIslandBody = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({ translate: [0,0,0], scale: 1.0 }), [ islandBody ]) ]);
   root.append(rotateIslandBody);
 
@@ -121,10 +131,6 @@ function createSceneGraph(gl, resources) {
       ])
     ]);
   root.append(vehicleNode);
-
-  // main light sources
-  root.append(makeLight(gl, resources, 0, 10, 0));
-  root.append(makeLight(gl, resources, 0, -20, 0));
 
   return root;
 }
