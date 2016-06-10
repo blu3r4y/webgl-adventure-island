@@ -28,9 +28,8 @@ void main() {
   v_eyeVec = -eyePosition.xyz;
 	v_lightVec = u_lightPos - eyePosition.xyz;
 
-	//TASK 1: pass on texture coordinates to fragment shader
-
 	v_texCoord = a_texCoord;
 
-	gl_Position = u_projection * eyePosition;
+
+	gl_Position =  u_projection * (u_modelView * vec4(0.0,0.0,0.0,1.0) + vec4(a_position.x, a_position.y, 0.0, 0.0));
 }

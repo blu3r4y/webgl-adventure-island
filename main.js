@@ -8,7 +8,7 @@ var gl = null;
 const camera = {
   rotation: {
     x: 0,
-    y: 75
+    y: 50
   },
   pos: {
     x: 0,
@@ -28,6 +28,7 @@ var lightNode;
 var vehicleNode;
 var shadowNode;
 var pyramidNode;
+var billboard;
 
 var translate;
 var renderFloor;
@@ -97,7 +98,8 @@ function createSceneGraph(gl, resources) {
   let island = new RenderSGNode(resources.island);
   root.append(island);
 
-  let billboard = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({ translate: [-2,-2,0.5], scale: 0.25 }),  [new ShaderSGNode(createProgram(gl, resources.vs_tex, resources.fs_tex), [new MaterialSGNode([new AdvancedTextureSGNode(resources.tree, [new RenderSGNode(makeBillboard())])])])])]);
+//  billboard = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({ translate: [-2,-2,0.5], scale: 0.25, rotateZ: 90 }),  [new ShaderSGNode(createProgram(gl, resources.vs_tex, resources.fs_tex), [new MaterialSGNode([new AdvancedTextureSGNode(resources.tree, [new RenderSGNode(makeBillboard())])])])])]);
+   billboard = new TransformationSGNode(glm.transform({ translate: [-2,-2,0.5], scale: 1}),  [new ShaderSGNode(createProgram(gl, resources.vs_tex, resources.fs_tex), [new MaterialSGNode([new AdvancedTextureSGNode(resources.tree, [new RenderSGNode(makeBillboard())])])])]);
   root.append(billboard);
   //add node for setting shadow parameters
   //initialize light
@@ -124,13 +126,11 @@ function createSceneGraph(gl, resources) {
   //root.append(rotateLight);
   vehicleNode = new TransformationSGNode(mat4.create(), [
       new TransformationSGNode(glm.transform({ translate: [0,0,0.1], scale: 0.5 }),  [
-      // vehicle, new TransformationSGNode(glm.translate(0,-0.5,0.25), [new ShaderSGNode(createProgram(gl, resources.vs_single, resources.fs_single), [new RenderSGNode(makeSphere(.1,10,10)) ])])
       vehicle, translateLight
-    //  new TransformationSGNode(glm.translate(1,1,10.25) [new RenderSGNode(makePyramid())])
-      //new MaterialSGNode([new RenderSGNode(makePyramid())])
       ])
     ]);
   root.append(vehicleNode);
+  billboard = new TransformationSGNode(glm.transform({ translate: [-2,-2,0.5], scale: 0.25}),  [new ShaderSGNode(createProgram(gl, resources.vs_tex, resources.fs_tex), [new MaterialSGNode([new AdvancedTextureSGNode(resources.tree, [new RenderSGNode(makeBillboard())])])])]);
   return root;
 }
 
@@ -161,11 +161,11 @@ function makePyramid() {
 }
 
 function makeBillboard() {
-  var width = 2;
-  var height = 2;
-  var position = [-width, 0, -height,   width, 0, -height,    width, 0, height,   -width, 0, height, ];
+  var width = 1;
+  var height = 1;
+  var position = [-width, -height, 0,    width,  -height, 0,    width,  height,0,   -width, height, 0, ];
   var normal = [0, 0, 1,   0, 0, 1,   0, 0, 1,   0, 0, 1];
-  var texturecoordinates = [1, 1,   0, 1,   0, 0,   1, 0];
+  var texturecoordinates = [0, 0,   1, 0,   1, 1,   0, 1];
   var index = [0, 1, 2,  2, 3, 0];
   return {
     position: position,
@@ -187,6 +187,8 @@ function render(timeInMilliseconds) {
   gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
   gl.clearColor(0.9, 0.9, 0.9, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
   //setup context and camera matrices
   const context = createSGContext(gl);
@@ -200,7 +202,9 @@ function render(timeInMilliseconds) {
   if(camera.pos.z > 0 && !userControlled){
       camera.pos.z = camera.pos.z - zoom;
   }
-  pyramidNode.matrix = glm.rotateZ(timeInMilliseconds*-0.01);
+//  pyramidNode.matrix = glm.rotateZ(timeInMilliseconds*-0.01);
+//  billboard.matrix =  glm.rotateZ(timeInMilliseconds*-0.01);
+//  context.viewMatrix = glm.rotateY(timeInMilliseconds*-0.01);
   //get inverse view matrix to allow computing eye-to-light matrix
   context.invViewMatrix = mat4.invert(mat4.create(), context.viewMatrix);
 
@@ -248,16 +252,23 @@ function initInteraction(canvas) {
     //https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent
     if (event.code === 'KeyC') {
       userControlled = !userControlled;
+    } else if(userControlled){
+        if(event.code === 'KeyP'){
+          camera.pos.z = camera.pos.z - zoom;
+        }
+        else if(event.code === 'KeyL'){
+          camera.pos.z = camera.pos.z + zoom;
+        }
     }
   });
   document.addEventListener('keydown', function(event) {
     //https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent
     if(userControlled) {
       if (event.code === 'ArrowUp') {
-        camera.pos.z = camera.pos.z - zoom;
+        camera.pos.y = camera.pos.y - zoom;
       }
       else if (event.code === 'ArrowDown') {
-        camera.pos.z = camera.pos.z + zoom;
+        camera.pos.y = camera.pos.y + zoom;
       }
       else if (event.code === 'ArrowRight') {
         camera.pos.x = camera.pos.x - zoom;
