@@ -7,58 +7,46 @@ var gl = null;
 //Camera struct that stores the camera rotation mario
 const camera = {
   rotation: {
-    x: 0,
-    y: 50
+    x: 270,
+    y: 210
   },
   pos: {
-    x: 0,
-    y: 0,
-    z: 10
+    x: -5,
+    y: 5,
+    z: -40
   }
 };
 
-var zoom = 0.02;
-
 //scene graph nodes
 var root = null;
-var rootnofloor = null;
-var translateLight;
-var rotateLight;
-var lightNode;
 var vehicleNode;
-var shadowNode;
 var pyramidNode;
 var billboard;
 
-var translate;
-var renderFloor;
-
-//textures
-var envcubetexture;
-var renderTargetColorTexture;
-var renderTargetDepthTexture;
-
-//framebuffer variables
-var renderTargetFramebuffer;
-var framebufferWidth = 1024;
-var framebufferHeight = 1024;
-
-var lightViewProjectionMatrix;
-
 var userControlled = false;
+var zoom = 0.2;
 
 //load the required resources using a utility function
 loadResources({
-  vs_shadow: 'shader/shadow.vs.glsl',
-  fs_shadow: 'shader/shadow.fs.glsl',
+  vs_gouraud: 'shader/gouraud.vs.glsl',
+  fs_gouraud: 'shader/gouraud.fs.glsl',
+  vs_phong: 'shader/phong.vs.glsl',
+  fs_phong: 'shader/phong.fs.glsl',
   vs_single: 'shader/single.vs.glsl',
   fs_single: 'shader/single.fs.glsl',
-  fs_island: 'shader/island.fs.glsl',
+  vs_cross: 'shader/cross.vs.glsl',
+  fs_cross: 'shader/cross.fs.glsl',
   vs_tex: 'shader/texture.vs.glsl',
+  vs_tex3d: 'shader/texture3d.vs.glsl',
   fs_tex: 'shader/texture.fs.glsl',
-  island: 'models/island.obj',
+  island_body: 'models/island_body.obj',
+  island_plane: 'models/island_plane.obj',
   vehicle: 'models/vehicle.obj',
-  tree: 'models/tree2.png'
+  cross: 'models/cross.obj',
+  tex_tree: 'models/tree2.png',
+  tex_grass: 'models/grass.jpg',
+  tex_test: 'models/tex_test.jpg',
+  tex_dry: 'models/dry.jpg'
 }).then(function (resources /*an object containing our keys with the loaded resources*/) {
   init(resources);
 
@@ -74,64 +62,93 @@ function init(resources) {
   //create scenegraph
   root = createSceneGraph(gl, resources);
 
-  //create scenegraph without floor and simple shader
-  //rootnofloor = new ShaderSGNode(createProgram(gl, resources.vs_single, resources.fs_single));
-  //rootnofloor.append(vehicleNode); //reuse model part
-
   initInteraction(gl.canvas);
 }
 
 function createSceneGraph(gl, resources) {
-  //create scenegraph
-  const root = new ShaderSGNode(createProgram(gl, resources.vs_shadow, resources.fs_shadow));
+
+  // phong shader as root
+  const root = new ShaderSGNode(createProgram(gl, resources.vs_phong, resources.fs_phong));
+
   pyramidNode = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({ translate: [0,0,0.5], scale: 0.5 }),  [ new RenderSGNode(makePyramid())])]);
-  let vehicle = new MaterialSGNode([ //use now framework implementation of material node
+  let vehicle = new MaterialSGNode([
     new RenderSGNode(makeVehicle()),
     pyramidNode
   ]);
-  //vehicle.append(new RenderSGNode(makePyramid()));
   //gold
   vehicle.ambient = [0.24725, 0.1995, 0.2745, 1];
   vehicle.diffuse = [0.75164, 0.60648, 0.42648, 1];
   vehicle.specular = [0.628281, 0.555802, 0.666065, 1];
   vehicle.shininess = 0.4;
-  let island = new RenderSGNode(resources.island);
-  root.append(island);
 
-//  billboard = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({ translate: [-2,-2,0.5], scale: 0.25, rotateZ: 90 }),  [new ShaderSGNode(createProgram(gl, resources.vs_tex, resources.fs_tex), [new MaterialSGNode([new AdvancedTextureSGNode(resources.tree, [new RenderSGNode(makeBillboard())])])])])]);
-   billboard = new TransformationSGNode(glm.transform({ translate: [-2,-2,0.5], scale: 1}),  [new ShaderSGNode(createProgram(gl, resources.vs_tex, resources.fs_tex), [new MaterialSGNode([new AdvancedTextureSGNode(resources.tree, [new RenderSGNode(makeBillboard())])])])]);
+  // island top side
+  let islandPlane = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex), [ new MaterialSGNode([ new AdvancedTextureSGNode(resources.tex_grass, [ new RenderSGNode(resources.island_plane) ]) ]) ]);
+  /*islandPlane.ambient = [0, 0.3, 0, 1];
+  islandPlane.diffuse = [0.52, 0.86, 0.12, 1];
+  islandPlane.specular = [0.1, 0.2, 0.15, 0.];
+  islandPlane.shininess = 1.0;*/
+  let rotateIslandPlane = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({ translate: [0,0,0], scale: 1.0 }), [ islandPlane ]) ]);
+  root.append(rotateIslandPlane);
+
+  // lower part of the island
+  let islandBody = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex), [ new MaterialSGNode([ new AdvancedTextureSGNode(resources.tex_dry, [ new RenderSGNode(resources.island_body) ]) ]) ]);
+  /*islandBody.ambient = [0.24725, 0.1995, 0.2745, 1];
+  islandBody.diffuse = [0.75164, 0.60648, 0.42648, 1];
+  islandBody.specular = [0.628281, 0.555802, 0.666065, 1];
+  islandBody.shininess = 0.9;*/
+  let rotateIslandBody = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({ translate: [0,0,0], scale: 1.0 }), [ islandBody ]) ]);
+  root.append(rotateIslandBody);
+
+  let waterDemo = new MaterialSGNode([ new RenderSGNode(makeRect(9.4, 8.9)) ]);
+  waterDemo.ambient = [0.3, 0.15, 0.12, 0.3];
+  waterDemo.diffuse = [0.52, 0.86, 0.98, 0.5];
+  waterDemo.specular = [0.1, 0.2, 0.25, 0.5];
+  waterDemo.shininess = 1.0;
+  let rotateWaterDemo = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({ translate: [-2.2,-1,-2.2], rotateX : 90, rotateZ : 40, scale: 1.0 }), [ waterDemo ]) ]);
+  root.append(rotateWaterDemo);
+
+  // coordinate cross for debugging
+  let coordinateCross = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({translate: [0, 0, 0], scale: 0.05}), [ new ShaderSGNode(createProgram(gl, resources.vs_cross, resources.fs_cross), [ new RenderSGNode(resources.cross) ]) ]) ]);
+  root.append(coordinateCross);
+
+  // tex_tree billboard
+  let billboard = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({ translate: [2, 1, 8], scale: 0.75, rotateX : -90, rotateZ : -90 }),  [new ShaderSGNode(createProgram(gl, resources.vs_tex, resources.fs_tex), [new MaterialSGNode([new AdvancedTextureSGNode(resources.tex_tree, [new RenderSGNode(makeBillboard())])])])])]);
   root.append(billboard);
-  //add node for setting shadow parameters
-  //initialize light
-  let light = new LightSGNode(); //use now framework implementation of light node
-  light.ambient = [0.2, 0.2, 0.2, 1];
-  light.diffuse = [0.8, 0.8, 0.8, 1];
-  light.specular = [1, 1, 1, 1];
-  light.position = [0,-0.5,0.25];
 
-  function createLightSphere() {
-      return new ShaderSGNode(createProgram(gl, resources.vs_single, resources.fs_single), [
-        new RenderSGNode(makeSphere(.2,10,10))
-      ]);
-    }
-
-  rotateLight = new TransformationSGNode(mat4.create());
-//  let translateLight = new TransformationSGNode(glm.translate(0,-2,2)); //translating the light is the same as setting the light position
-  let translateLight =  new TransformationSGNode(glm.translate(0,-0.5,0.25));
-  let lightSphere = new ShaderSGNode(createProgram(gl, resources.vs_single, resources.fs_single), [new RenderSGNode(makeSphere(.1,10,10)) ]);
-//  rotateLight.append(translateLight);
-  translateLight.append(light);
-//  translateLight.append(createLightSphere()); //add sphere for debugging: since we use 0,0,0 as our light position the sphere is at the same position as the light source
-  translateLight.append(lightSphere);
-  //root.append(rotateLight);
   vehicleNode = new TransformationSGNode(mat4.create(), [
-      new TransformationSGNode(glm.transform({ translate: [0,0,0.1], scale: 0.5 }),  [
-      vehicle, translateLight
+      new TransformationSGNode(glm.transform({ translate: [8,0.5,4], scale: 0.5, rotateX : 270, rotateZ : 110 }),  [
+      vehicle, makeLight(gl,  resources, 0, -0.5, 0.25)
       ])
     ]);
   root.append(vehicleNode);
-  billboard = new TransformationSGNode(glm.transform({ translate: [-2,-2,0.5], scale: 0.25}),  [new ShaderSGNode(createProgram(gl, resources.vs_tex, resources.fs_tex), [new MaterialSGNode([new AdvancedTextureSGNode(resources.tree, [new RenderSGNode(makeBillboard())])])])]);
+
+  // main light sources
+  root.append(makeLight(gl, resources, 0, 10, 0));
+  root.append(makeLight(gl, resources, 0, -20, 0));
+
   return root;
+}
+
+function makeLight(gl, resources, x, y, z)
+{
+  function createLightSphere() {
+    return new ShaderSGNode(createProgram(gl, resources.vs_single, resources.fs_single), [ new RenderSGNode(makeSphere(.2,10,10)) ]);
+  }
+
+  let light = new LightSGNode();
+  light.ambient = [0.2, 0.2, 0.2, 1];
+  light.diffuse = [0.8, 0.8, 0.8, 1];
+  light.specular = [1, 1, 1, 1];
+  light.position = [0, 0, 0];
+
+  let rotateLight = new TransformationSGNode(mat4.create());
+  let translateLight = new TransformationSGNode(glm.translate(x,y,z)); //translating the light is the same as setting the light position
+
+  rotateLight.append(translateLight);
+  translateLight.append(light);
+  translateLight.append(createLightSphere());
+
+  return rotateLight;
 }
 
 function makeVehicle() {
@@ -194,15 +211,19 @@ function render(timeInMilliseconds) {
   const context = createSGContext(gl);
   context.projectionMatrix = mat4.perspective(mat4.create(), 30, gl.drawingBufferWidth / gl.drawingBufferHeight, 0.01, 100);
   //very primitive camera implementation
-  let lookAtMatrix = mat4.lookAt(mat4.create(), [camera.pos.x, camera.pos.y, camera.pos.z], [camera.pos.x, camera.pos.y, 0], [0,1,0]);
+  let lookAtMatrix = mat4.lookAt(mat4.create(), vec3.fromValues(camera.pos.x, camera.pos.y, camera.pos.z), vec3.fromValues(camera.pos.x, camera.pos.y, 0), vec3.fromValues(0,1,0));
   let mouseRotateMatrix = mat4.multiply(mat4.create(),
                           glm.rotateX(camera.rotation.y),
                           glm.rotateY(camera.rotation.x));
   context.viewMatrix = mat4.multiply(mat4.create(), lookAtMatrix, mouseRotateMatrix);
-  if(camera.pos.z > 0 && !userControlled){
-      camera.pos.z = camera.pos.z - zoom;
+  if(camera.pos.z < -15 && !userControlled){
+      camera.pos.z = camera.pos.z + zoom;
   }
-//  pyramidNode.matrix = glm.rotateZ(timeInMilliseconds*-0.01);
+  else
+  {
+    userControlled = true;
+  }
+  pyramidNode.matrix = glm.rotateZ(timeInMilliseconds*-0.01);
 //  billboard.matrix =  glm.rotateZ(timeInMilliseconds*-0.01);
 //  context.viewMatrix = glm.rotateY(timeInMilliseconds*-0.01);
   //get inverse view matrix to allow computing eye-to-light matrix
@@ -238,8 +259,8 @@ function initInteraction(canvas) {
     const delta = { x : mouse.pos.x - pos.x, y: mouse.pos.y - pos.y };
     if (mouse.leftButtonDown) {
       //add the relative movement of the mouse to the rotation variables
-  		camera.rotation.x += delta.x;
-  		camera.rotation.y += delta.y;
+  		camera.rotation.x -= delta.x;
+  		camera.rotation.y -= delta.y;
     }
     mouse.pos = pos;
   });
@@ -264,17 +285,17 @@ function initInteraction(canvas) {
   document.addEventListener('keydown', function(event) {
     //https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent
     if(userControlled) {
-      if (event.code === 'ArrowUp') {
-        camera.pos.y = camera.pos.y - zoom;
+      if (event.code === 'ArrowUp' || event.code === 'KeyW') {
+        camera.pos.z = camera.pos.z + zoom;
       }
-      else if (event.code === 'ArrowDown') {
-        camera.pos.y = camera.pos.y + zoom;
+      else if (event.code === 'ArrowDown' || event.code === 'KeyS') {
+        camera.pos.z = camera.pos.z - zoom;
       }
-      else if (event.code === 'ArrowRight') {
-        camera.pos.x = camera.pos.x - zoom;
-      }
-      else if (event.code === 'ArrowLeft') {
+      else if (event.code === 'ArrowRight' || event.code === 'KeyD') {
         camera.pos.x = camera.pos.x + zoom;
+      }
+      else if (event.code === 'ArrowLeft' || event.code === 'KeyA') {
+        camera.pos.x = camera.pos.x - zoom;
       }
     }
   });
