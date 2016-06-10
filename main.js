@@ -72,11 +72,10 @@ function createSceneGraph(gl, resources) {
   const root = new ShaderSGNode(createProgram(gl, resources.vs_phong, resources.fs_phong));
 
   // y axis of light source does not work as expected somehow
-  let mainLight1 = makeLight(gl, resources, 0, -10, 0);
-  let mainLight2 = makeLight(gl, resources, 0, 100, 0);
+  let mainLight1 = makeLight(gl, resources, 0, 10, 0);
+  let mainLight2 = makeLight(gl, resources, 10, -20, 10);
 
   // main light sources
-  //root.append(mainLight2);  // lower light - uncommented because our shaders only look for one light source at the moment
   root.append(mainLight1);  // upper light
 
   pyramidNode = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({ translate: [0,0,0.5], scale: 0.5 }),  [ new RenderSGNode(makePyramid())])]);
