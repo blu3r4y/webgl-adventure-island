@@ -321,52 +321,52 @@ function initInteraction(canvas) {
     return angle;
   }
 
-  function deg2rad(degrees) {
-    return degrees * Math.PI / 180;
-  }
+}
 
-  function moveForward(){
-    let zpart = -Math.cos(deg2rad(camera.rotation.x));
-    let xpart = Math.sin(deg2rad(camera.rotation.x));
-    camera.pos.z = camera.pos.z + zoom*zpart;
-    if(camera.pos.z > 0){
-      camera.pos.z = -0.1;
-    }
-    camera.pos.x = camera.pos.x + zoom*xpart;
-    console.log("z :" + camera.pos.z);
+function moveForward(){
+  let zpart = -Math.cos(deg2rad(camera.rotation.x));
+  let xpart = Math.sin(deg2rad(camera.rotation.x));
+  camera.pos.z = camera.pos.z + zoom*zpart;
+  if(camera.pos.z > 0){
+    camera.pos.z = -0.1;
   }
+  camera.pos.x = camera.pos.x + zoom*xpart;
+  console.log("z :" + camera.pos.z);
+}
 
-  function moveBackwards(){
-    let zpart = Math.cos(deg2rad(camera.rotation.x));
-    let xpart = -Math.sin(deg2rad(camera.rotation.x));
-    camera.pos.z = camera.pos.z + zoom*zpart;
-    if(camera.pos.z > 0){
-      camera.pos.z = -0.1;
-    }
-    camera.pos.x = camera.pos.x + zoom*xpart;
-    console.log("z :" + camera.pos.z);
+function moveBackwards(){
+  let zpart = Math.cos(deg2rad(camera.rotation.x));
+  let xpart = -Math.sin(deg2rad(camera.rotation.x));
+  camera.pos.z = camera.pos.z + zoom*zpart;
+  if(camera.pos.z > 0){
+    camera.pos.z = -0.01;
   }
+  camera.pos.x = camera.pos.x + zoom*xpart;
+  console.log("z :" + camera.pos.z);
+}
 
-  function moveRight(){
-    let zpart = Math.sin(deg2rad(camera.rotation.x));
-    let xpart = Math.cos(deg2rad(camera.rotation.x));
-    camera.pos.z = camera.pos.z + zoom*zpart;
-    if(camera.pos.z > 0){
-      camera.pos.z = -0.1;
-    }
-    camera.pos.x = camera.pos.x + zoom*xpart;
-    console.log("z :" + camera.pos.z);
+function moveRight(){
+  let zpart = Math.sin(deg2rad(camera.rotation.x));
+  let xpart = Math.cos(deg2rad(camera.rotation.x));
+  camera.pos.z = camera.pos.z + zoom*zpart;
+  if(camera.pos.z > 0){
+    camera.pos.z = -0.1;
   }
+  camera.pos.x = camera.pos.x + zoom*xpart;
+  console.log("z :" + camera.pos.z);
+}
 
-  function moveLeft(){
-    let zpart = -Math.sin(deg2rad(camera.rotation.x));
-    let xpart = -Math.cos(deg2rad(camera.rotation.x));
-    camera.pos.z = camera.pos.z + zoom*zpart;
-    if(camera.pos.z > 0){
-      camera.pos.z = -0.1;
-    }
-    camera.pos.x = camera.pos.x + zoom*xpart;
-    console.log("z :" + camera.pos.z);
+function moveLeft(){
+  let zpart = -Math.sin(deg2rad(camera.rotation.x));
+  let xpart = -Math.cos(deg2rad(camera.rotation.x));
+  camera.pos.z = camera.pos.z + zoom*zpart;
+  if(camera.pos.z > 0){
+    camera.pos.z = -0.1;
   }
+  camera.pos.x = camera.pos.x + zoom*xpart;
+  console.log("z :" + camera.pos.z);
+}
 
+function deg2rad(degrees) {
+  return degrees * Math.PI / 180;
 }
