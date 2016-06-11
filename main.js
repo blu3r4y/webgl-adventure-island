@@ -232,7 +232,7 @@ function render(timeInMilliseconds) {
 //  context.viewMatrix = mat4.multiply(mat4.create(), lookAtMatrix, mouseRotateMatrix);
   context.viewMatrix = mat4.multiply(mat4.create(), mouseRotateMatrix, lookAtMatrix);
   if(camera.pos.z < -15 && !userControlled){
-      camera.pos.z = camera.pos.z + zoom;
+      moveForward();
   }
   else
   {
@@ -293,13 +293,6 @@ function initInteraction(canvas) {
     //https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent
     if (event.code === 'KeyC') {
       userControlled = !userControlled;
-    } else if(userControlled){
-        if(event.code === 'KeyP'){
-          camera.pos.z = camera.pos.z - zoom;
-        }
-        else if(event.code === 'KeyL'){
-          camera.pos.z = camera.pos.z + zoom;
-        }
     }
   });
   document.addEventListener('keydown', function(event) {
