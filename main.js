@@ -6,12 +6,21 @@
 var gl = null;
 //Camera struct that stores the camera rotation mario
 const camera = {
-  rotation: {
+  /*rotation: {
     x: 270,
     y: 210
+  },*/
+  rotation: {
+    x: 180,
+    y: 180
   },
-  pos: {
+  /*pos: {
     x: -5,
+    y: 5,
+    z: -40
+  }*/
+  pos: {
+    x: 0,
     y: 5,
     z: -40
   }
@@ -220,7 +229,8 @@ function render(timeInMilliseconds) {
   let mouseRotateMatrix = mat4.multiply(mat4.create(),
                           glm.rotateX(camera.rotation.y),
                           glm.rotateY(camera.rotation.x));
-  context.viewMatrix = mat4.multiply(mat4.create(), lookAtMatrix, mouseRotateMatrix);
+//  context.viewMatrix = mat4.multiply(mat4.create(), lookAtMatrix, mouseRotateMatrix);
+  context.viewMatrix = mat4.multiply(mat4.create(), mouseRotateMatrix, lookAtMatrix);
   if(camera.pos.z < -15 && !userControlled){
       camera.pos.z = camera.pos.z + zoom;
   }
@@ -264,8 +274,13 @@ function initInteraction(canvas) {
     const delta = { x : mouse.pos.x - pos.x, y: mouse.pos.y - pos.y };
     if (mouse.leftButtonDown) {
       //add the relative movement of the mouse to the rotation variables
-  		camera.rotation.x -= delta.x;
-  		camera.rotation.y -= delta.y;
+  		camera.rotation.x = getDegrees(camera.rotation.x - delta.x);
+      let ang = getDegrees(camera.rotation.y - delta.y);
+      if(ang > 100 && ang < 260)
+      {
+        camera.rotation.y = ang;
+      }
+    //  console.log("x: " + camera.rotation.x, "y: " + camera.rotation.y, "z: " + -Math.cos(deg2rad(camera.rotation.x)), "x: " + -Math.sin(deg2rad(camera.rotation.x)));
     }
     mouse.pos = pos;
   });
@@ -290,20 +305,75 @@ function initInteraction(canvas) {
   document.addEventListener('keydown', function(event) {
     //https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent
     if(userControlled) {
-      if (event.code === 'ArrowUp' || event.code === 'KeyW') {
-        camera.pos.z = camera.pos.z + zoom;
+      if ((event.code === 'ArrowUp' || event.code === 'KeyW')) {
+        moveForward();
       }
       else if (event.code === 'ArrowDown' || event.code === 'KeyS') {
-        camera.pos.z = camera.pos.z - zoom;
+        moveBackwards();
       }
       else if (event.code === 'ArrowRight' || event.code === 'KeyD') {
-        camera.pos.x = camera.pos.x + zoom;
+        moveRight();
       }
       else if (event.code === 'ArrowLeft' || event.code === 'KeyA') {
-        camera.pos.x = camera.pos.x - zoom;
+        moveLeft();
       }
     }
   });
 
+  function getDegrees(angle){
+    angle = angle%360;
+    if(angle < 0){
+      angle += 360;
+    }
+    return angle;
+  }
+
+  function deg2rad(degrees) {
+    return degrees * Math.PI / 180;
+  }
+
+  function moveForward(){
+    let zpart = -Math.cos(deg2rad(camera.rotation.x));
+    let xpart = Math.sin(deg2rad(camera.rotation.x));
+    camera.pos.z = camera.pos.z + zoom*zpart;
+    if(camera.pos.z > 0){
+      camera.pos.z = -0.1;
+    }
+    camera.pos.x = camera.pos.x + zoom*xpart;
+    console.log("z :" + camera.pos.z);
+  }
+
+  function moveBackwards(){
+    let zpart = Math.cos(deg2rad(camera.rotation.x));
+    let xpart = -Math.sin(deg2rad(camera.rotation.x));
+    camera.pos.z = camera.pos.z + zoom*zpart;
+    if(camera.pos.z > 0){
+      camera.pos.z = -0.1;
+    }
+    camera.pos.x = camera.pos.x + zoom*xpart;
+    console.log("z :" + camera.pos.z);
+  }
+
+  function moveRight(){
+    let zpart = Math.sin(deg2rad(camera.rotation.x));
+    let xpart = Math.cos(deg2rad(camera.rotation.x));
+    camera.pos.z = camera.pos.z + zoom*zpart;
+    if(camera.pos.z > 0){
+      camera.pos.z = -0.1;
+    }
+    camera.pos.x = camera.pos.x + zoom*xpart;
+    console.log("z :" + camera.pos.z);
+  }
+
+  function moveLeft(){
+    let zpart = -Math.sin(deg2rad(camera.rotation.x));
+    let xpart = -Math.cos(deg2rad(camera.rotation.x));
+    camera.pos.z = camera.pos.z + zoom*zpart;
+    if(camera.pos.z > 0){
+      camera.pos.z = -0.1;
+    }
+    camera.pos.x = camera.pos.x + zoom*xpart;
+    console.log("z :" + camera.pos.z);
+  }
 
 }
