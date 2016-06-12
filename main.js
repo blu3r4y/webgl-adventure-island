@@ -42,12 +42,23 @@ const rock  = {
   pos: {
     x: 10,
     y: 0,
-    z: 6
+    z: 4
   }
 }
 
 var animationTime = 0;
 var animateRock = true;
+
+var crabNode;
+var animateCrab = true;
+
+const crab = {
+  pos: {
+    x: rock.pos.x,
+    y: rock.pos.y,
+    z: rock.pos.z + 1.5
+  }
+}
 
 var invertedCamera = false;
 var userControlled = false;
@@ -88,7 +99,8 @@ loadResources({
   tex_test: 'models/tex_test.jpg',
   tex_dry: 'models/dry.jpg',
   rock: 'models/stone/models/stone.obj',
-  tex_rock: 'models/stone/texture/texture.jpg'
+  tex_rock: 'models/stone/texture/texture.jpg',
+  crab: 'models/crab/crab.obj'
 }).then(function (resources /*an object containing our keys with the loaded resources*/) {
   init(resources);
 
@@ -124,7 +136,6 @@ function createSceneGraph(gl, resources) {
     new RenderSGNode(makeVehicle()),
     pyramidNode
   ]);
-  //gold
   vehicle.ambient = [0.24725, 0.1995, 0.2745, 1];
   vehicle.diffuse = [0.75164, 0.60648, 0.42648, 1];
   vehicle.specular = [0.628281, 0.555802, 0.666065, 1];
@@ -174,6 +185,15 @@ function createSceneGraph(gl, resources) {
 
   rockNode = new TransformationSGNode(glm.transform({ translate: [rock.pos.x, rock.pos.y, rock.pos.z], scale: 0.75, rotateY : 0, rotateZ : 0 }),  [new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex), [new MaterialSGNode([new AdvancedTextureSGNode(resources.tex_rock, [new RenderSGNode(resources.rock)])])])]);
   root.append(rockNode);
+  let crabN = new MaterialSGNode([new RenderSGNode(resources.crab)]);
+  crabN.ambient = [1, 0.1995, 0.2745, 1];
+  crabN.diffuse = [1, 0.60648, 0.42648, 1];
+  crabN.specular = [1, 0.555802, 0.666065, 1];
+  crabN.shininess = 0.5;
+  crabNode = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({ translate: [crab.pos.x, crab.pos.y, crab.pos.z], rotateY : 270}),  [
+        crabN ])
+    ]);
+  root.append(crabNode);
   return root;
 }
 
@@ -288,9 +308,21 @@ function render(timeInMilliseconds) {
   pyramidNode.matrix = glm.rotateZ(timeInMilliseconds*-0.01);
   // Animate rock every 100 ms
   if(animateRock && ((timeInMilliseconds - animationTime) > 100)){
+    //Alternate between 0 and 1
     rock.pos.y = (rock.pos.y+1)&1;
     rockNode.matrix = glm.transform({ translate: [rock.pos.x, rock.pos.y*0.1, rock.pos.z], scale: 0.75});
     animationTime = timeInMilliseconds;
+  }
+  if(animateCrab){
+    crabNode.matrix = glm.rotateY(timeInMilliseconds*-0.01);
+//    crabNode.matrix = mat4.multiply(mat4.create(), glm.transform({ translate: [rock.pos.x, crab.pos.y, rock.pos.z]}), crabNode.matrix);
+//    crabNode.matrix = mat4.multiply(mat4.create(), glm.rotateY(timeInMilliseconds*-0.01), crabNode.matrix);
+//    crabNode.matrix = mat4.multiply(mat4.create(), glm.transform({ translate: [-rock.pos.x, -crab.pos.y, -rock.pos.z]}), crabNode.matrix);
+  //  let moveToRotPoint = glm.transform({ translate: [rock.pos.x, crab.pos.y, rock.pos.z]});
+  //  let rotateMatrix = glm.rotateY(timeInMilliseconds*-0.01);
+  //  let moveBack= glm.transform({ translate: [crab.pos.x, crab.pos.y, crab.pos.z]});
+  //  crabNode.matrix = mat4.multiply(mat4.create(), moveToRotPoint, rotateMatrix);
+  //  crabNode.matirx = mat4.multiply(mat4.create(), crabNode.matrix, moveBack);
   }
   //get inverse view matrix to allow computing eye-to-light matrix
   context.invViewMatrix = mat4.invert(mat4.create(), context.viewMatrix);
