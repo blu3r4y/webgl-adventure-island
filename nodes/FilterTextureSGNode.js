@@ -1,5 +1,5 @@
-/* works just like AdvancedTextureSGNode except that it uses mipmapping to reduce texture flickering noise.
-* furthermore for texture3d shaders you can supply a scale factor which defines how the texture should be scaled onto the object */
+// works just like AdvancedTextureSGNode except that it uses mipmapping to reduce texture flickering noise.
+// furthermore for texture3d shaders you can supply a scale factor which defines how the texture should be scaled onto the object
 
 class FilterTextureSGNode extends SGNode {
     constructor(image, scale, children ) {

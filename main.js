@@ -104,7 +104,7 @@ loadResources({
   island_body: 'models/island/models/island_body.obj',
   island_plane: 'models/island/models/island_plane.obj',
   cross: 'models/cross.obj',
-  tex_tree: 'models/tree2.png',
+  tex_tree: 'models/tree.png',
   tex_grass: 'models/island/texture/grass.jpg',
   tex_test: 'models/tex_test.jpg',
   tex_dry: 'models/island/texture/dry.jpg',
@@ -264,7 +264,7 @@ function createSceneGraph(gl, resources) {
   root.append(coordinateCross);
 
   // tex_tree billboard
-  let billboard = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({ translate: [2, 1, 8], scale: 0.75, rotateX : -90, rotateZ : -90 }),  [new ShaderSGNode(createProgram(gl, resources.vs_billboard, resources.fs_tex), [new MaterialSGNode([new AdvancedTextureSGNode(resources.tex_tree, [new RenderSGNode(makeBillboard())])])])])]);
+  let billboard = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({ translate: [2, 1, 8], scale: 0.75, rotateX : -90, rotateZ : -90 }),  [new ShaderSGNode(createProgram(gl, resources.vs_billboard, resources.fs_tex), [new MaterialSGNode([new FilterTextureSGNode(resources.tex_tree, 1.0, [new RenderSGNode(makeBillboard())])])])])]);
   root.append(billboard);
 
   vehicleNode = new TransformationSGNode(mat4.create(), [
@@ -274,7 +274,7 @@ function createSceneGraph(gl, resources) {
     ]);
   root.append(vehicleNode);
 
-  rockNode = new TransformationSGNode(glm.transform({ translate: [rock.pos.x, rock.pos.y, rock.pos.z], scale: 0.75, rotateY : 0, rotateZ : 0 }),  [new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex), [new MaterialSGNode([new AdvancedTextureSGNode(resources.tex_rock, [new RenderSGNode(resources.rock)])])])]);
+  rockNode = new TransformationSGNode(glm.transform({ translate: [rock.pos.x, rock.pos.y, rock.pos.z], scale: 0.75, rotateY : 0, rotateZ : 0 }),  [new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex), [new MaterialSGNode([new FilterTextureSGNode(resources.tex_rock, 0.2, [new RenderSGNode(resources.rock)])])])]);
   root.append(rockNode);
   let crabN = new MaterialSGNode([new RenderSGNode(resources.crab)]);
   crabN.ambient = [1, 0.1995, 0.2745, 1];
