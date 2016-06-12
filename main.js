@@ -76,6 +76,14 @@ var lastSampleTime = 0;
 var mainLight1;
 var mainLight2;
 
+// skybox texture
+var envcubetexture;
+
+// active cubemap day = 0, night = 1
+var activeCubeMap = 0;
+
+// link to global resources
+var resourcesGlobal;
 
 //load the required resources using a utility function
 loadResources({
@@ -91,6 +99,8 @@ loadResources({
   fs_tex3d: 'shader/texture3d.fs.glsl',
   vs_tex3d: 'shader/texture3d.vs.glsl',
   fs_tex: 'shader/texture.fs.glsl',
+  vs_env: 'shader/envmap.vs.glsl',
+  fs_env: 'shader/envmap.fs.glsl',
   island_body: 'models/island/models/island_body.obj',
   island_plane: 'models/island/models/island_plane.obj',
   cross: 'models/cross.obj',
@@ -100,7 +110,19 @@ loadResources({
   tex_dry: 'models/island/texture/dry.jpg',
   rock: 'models/stone/models/stone.obj',
   tex_rock: 'models/stone/texture/texture.jpg',
-  crab: 'models/crab/crab.obj'
+  crab: 'models/crab/crab.obj',
+  env_night_pos_x: 'models/skybox/moon_rt_min.jpg',
+  env_night_neg_x: 'models/skybox/moon_lf_min.jpg',
+  env_night_pos_y: 'models/skybox/moon_up_min.jpg',
+  env_night_neg_y: 'models/skybox/moon_dn_min.jpg',
+  env_night_pos_z: 'models/skybox/moon_bk_min.jpg',
+  env_night_neg_z: 'models/skybox/moon_ft_min.jpg',
+  env_day_pos_x: 'models/skybox/tropical_rt_min.jpg',
+  env_day_neg_x: 'models/skybox/tropical_lf_min.jpg',
+  env_day_pos_y: 'models/skybox/tropical_up_min.jpg',
+  env_day_neg_y: 'models/skybox/tropical_dn_min.jpg',
+  env_day_pos_z: 'models/skybox/tropical_bk_min.jpg',
+  env_day_neg_z: 'models/skybox/tropical_ft_min.jpg'
 }).then(function (resources /*an object containing our keys with the loaded resources*/) {
   init(resources);
 
@@ -108,8 +130,10 @@ loadResources({
 });
 
 function init(resources) {
+  resourcesGlobal = resources;
   //create a GL context
   gl = createContext(400, 400);
+  initCubeMap(resources);
 
   gl.enable(gl.DEPTH_TEST);
 
@@ -119,10 +143,77 @@ function init(resources) {
   initInteraction(gl.canvas);
 }
 
+function initCubeMap(resources) {
+  //create the texture
+  envcubetexture = gl.createTexture();
+  //define some texture unit we want to work on
+  gl.activeTexture(gl.TEXTURE0);
+  //bind the texture to the texture unit
+  gl.bindTexture(gl.TEXTURE_CUBE_MAP, envcubetexture);
+  //set sampling parameters
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
+  //gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_R, gl.MIRRORED_REPEAT); //will be available in WebGL 2
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  //set correct image for each side of the cube map
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_day_pos_x);
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_day_neg_x);
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_day_pos_y);
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_day_neg_y);
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_day_pos_z);
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_day_neg_z);
+  //generate mipmaps (optional)
+  gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
+  // enable anisotropic filtering
+  var ext = gl.getExtension("WEBKIT_EXT_texture_filter_anisotropic");
+  var max_anisotropy = gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT);
+  gl.texParameterf(gl.TEXTURE_CUBE_MAP, ext.TEXTURE_MAX_ANISOTROPY_EXT, max_anisotropy);
+  //unbind the texture again
+  gl.bindTexture(gl.TEXTURE_CUBE_MAP, null);
+
+  activeCubeMap = 0;
+}
+
+function toggleCubeMapTexture(type)
+{
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_CUBE_MAP, envcubetexture);
+
+  if (type === 0)
+  {
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_day_pos_x);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_day_neg_x);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_day_pos_y);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_day_neg_y);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_day_pos_z);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_day_neg_z);
+  }
+  else
+  {
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_night_pos_x);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_night_neg_x);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_night_pos_y);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_night_neg_y);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_night_pos_z);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_night_neg_z);
+  }
+
+  gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
+  gl.bindTexture(gl.TEXTURE_CUBE_MAP, null);
+
+  activeCubeMap = type;
+}
+
 function createSceneGraph(gl, resources) {
 
   // phong shader as root
   const root = new ShaderSGNode(createProgram(gl, resources.vs_phong, resources.fs_phong));
+
+  //add skybox by putting large sphere around us
+  var skybox = new ShaderSGNode(createProgram(gl, resources.vs_env, resources.fs_env), [ new EnvironmentSGNode(envcubetexture, 4, false,
+      new RenderSGNode(makeSphere(50))) ]);
+  root.append(skybox);
 
   // y axis of light source does not work as expected somehow
   mainLight1 = makeLight(gl, resources, 0, 10, 0);
@@ -141,7 +232,7 @@ function createSceneGraph(gl, resources) {
   vehicle.specular = [0.628281, 0.555802, 0.666065, 1];
   vehicle.shininess = 0.4;
 
-  let islandPlane = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [ new MaterialSGNode([ new AdvancedTextureSGNode(resources.tex_grass, [ new RenderSGNode(resources.island_plane) ]) ]) ]);
+  let islandPlane = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [ new MaterialSGNode([ new FilterTextureSGNode(resources.tex_grass, 0.2, [ new RenderSGNode(resources.island_plane) ]) ]) ]);
   islandPlane.ambient = [0, 0.3, 0, 1];
   islandPlane.diffuse = [0.52, 0.86, 0.12, 1];
   islandPlane.specular = [0.1, 0.2, 0.15, 0.];
@@ -151,7 +242,7 @@ function createSceneGraph(gl, resources) {
   root.append(rotateIslandPlane);
 
   // lower part of the island
-  let islandBody = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [ new MaterialSGNode([ new AdvancedTextureSGNode(resources.tex_dry, [ new RenderSGNode(resources.island_body) ]) ]) ]);
+  let islandBody = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [ new MaterialSGNode([ new FilterTextureSGNode(resources.tex_dry, 0.05, [ new RenderSGNode(resources.island_body) ]) ]) ]);
   islandBody.ambient = [0, 0.3, 0, 1];
   islandBody.diffuse = [0.52, 0.86, 0.12, 1];
   islandBody.specular = [0.1, 0.2, 0.15, 0.];
@@ -460,6 +551,10 @@ function initInteraction(canvas) {
     //https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent
     if (event.code === 'KeyC') {
       userControlled = !userControlled;
+    }
+    else if (event.code === 'KeyN')
+    {
+      toggleCubeMapTexture(activeCubeMap === 0 ? 1 : 0);
     }
   });
   // map pressed keys
