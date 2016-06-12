@@ -1,4 +1,4 @@
-// Phong Vertex Shader
+// Phong Billboard Vertex Shader
 
 attribute vec3 a_position;
 attribute vec3 a_normal;
@@ -17,7 +17,6 @@ varying vec3 v_normalVec;
 varying vec3 v_eyeVec;
 varying vec3 v_lightVec;
 
-//TASK 1: define output variable for texture coordinates
 varying vec2 v_texCoord;
 
 void main() {

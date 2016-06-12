@@ -36,6 +36,18 @@ var root = null;
 var vehicleNode;
 var pyramidNode;
 var billboard;
+var rockNode;
+
+const rock  = {
+  pos: {
+    x: 10,
+    y: 0,
+    z: 6
+  }
+}
+
+var animationTime = 0;
+var animateRock = true;
 
 var invertedCamera = false;
 var userControlled = false;
@@ -45,6 +57,8 @@ var zoom = 0.2;
 var elapsedTime = 0;
 var frameCount = 0;
 var lastTime = new Date().getTime();
+
+var lastSampleTime = 0;
 
 //load the required resources using a utility function
 loadResources({
@@ -56,7 +70,7 @@ loadResources({
   fs_single: 'shader/single.fs.glsl',
   vs_cross: 'shader/cross.vs.glsl',
   fs_cross: 'shader/cross.fs.glsl',
-  vs_tex: 'shader/texture.vs.glsl',
+  vs_billboard: 'shader/texture.vs.glsl',
   fs_tex3d: 'shader/texture3d.fs.glsl',
   vs_tex3d: 'shader/texture3d.vs.glsl',
   fs_tex: 'shader/texture.fs.glsl',
@@ -67,7 +81,8 @@ loadResources({
   tex_grass: 'models/grass.jpg',
   tex_test: 'models/tex_test.jpg',
   tex_dry: 'models/dry.jpg',
-  rock: 'models/Rock/Rock.obj'
+  rock: 'models/stone/models/stone.obj',
+  tex_rock: 'models/stone/texture/texture.jpg'
 }).then(function (resources /*an object containing our keys with the loaded resources*/) {
   init(resources);
 
@@ -141,7 +156,7 @@ function createSceneGraph(gl, resources) {
   root.append(coordinateCross);
 
   // tex_tree billboard
-  let billboard = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({ translate: [2, 1, 8], scale: 0.75, rotateX : -90, rotateZ : -90 }),  [new ShaderSGNode(createProgram(gl, resources.vs_tex, resources.fs_tex), [new MaterialSGNode([new AdvancedTextureSGNode(resources.tex_tree, [new RenderSGNode(makeBillboard())])])])])]);
+  let billboard = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({ translate: [2, 1, 8], scale: 0.75, rotateX : -90, rotateZ : -90 }),  [new ShaderSGNode(createProgram(gl, resources.vs_billboard, resources.fs_tex), [new MaterialSGNode([new AdvancedTextureSGNode(resources.tex_tree, [new RenderSGNode(makeBillboard())])])])])]);
   root.append(billboard);
 
   vehicleNode = new TransformationSGNode(mat4.create(), [
@@ -151,8 +166,8 @@ function createSceneGraph(gl, resources) {
     ]);
   root.append(vehicleNode);
 
-  root.append(new RenderSGNode(resources.rock));
-
+  rockNode = new TransformationSGNode(glm.transform({ translate: [rock.pos.x, rock.pos.y, rock.pos.z], scale: 0.75, rotateY : 0, rotateZ : 0 }),  [new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex), [new MaterialSGNode([new AdvancedTextureSGNode(resources.tex_rock, [new RenderSGNode(resources.rock)])])])]);
+  root.append(rockNode);
   return root;
 }
 
@@ -230,9 +245,10 @@ function render(timeInMilliseconds) {
   // advance camera position
   cameraControlLoop();
 
-  // sample mouse and keyboard input every 50 milliseconds
-  if (timeInMilliseconds % 50) {
+  // sample mouse and keyboard input every 10 milliseconds
+  if ((timeInMilliseconds - lastSampleTime) > 10) {
     sampleInputs();
+    lastSampleTime = timeInMilliseconds;
   }
 
   //setup viewport
@@ -259,9 +275,14 @@ function render(timeInMilliseconds) {
   {
     userControlled = true;
   }
+  //Animate pyramid always
   pyramidNode.matrix = glm.rotateZ(timeInMilliseconds*-0.01);
-//  billboard.matrix =  glm.rotateZ(timeInMilliseconds*-0.01);
-//  context.viewMatrix = glm.rotateY(timeInMilliseconds*-0.01);
+  // Animate rock every 100 ms
+  if(animateRock && ((timeInMilliseconds - animationTime) > 100)){
+    rock.pos.y = (rock.pos.y+1)&1;
+    rockNode.matrix = glm.transform({ translate: [rock.pos.x, rock.pos.y*0.1, rock.pos.z], scale: 0.75});
+    animationTime = timeInMilliseconds;
+  }
   //get inverse view matrix to allow computing eye-to-light matrix
   context.invViewMatrix = mat4.invert(mat4.create(), context.viewMatrix);
 
@@ -428,10 +449,6 @@ function moveForward(){
 function moveBackwards(){
   let zpart = Math.cos(deg2rad(camera.sollRotation.x));
   let xpart = -Math.sin(deg2rad(camera.sollRotation.x));
-  camera.sollPos.z = camera.sollPos.z + zoom*zpart;
-  if(camera.sollPos.z > lookAtZ){
-    //camera.sollPos.z = -0.01;
-  }
   move(zpart, xpart);
 }
 

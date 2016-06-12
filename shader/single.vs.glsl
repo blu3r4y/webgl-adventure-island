@@ -1,4 +1,6 @@
 attribute vec3 a_position;
+//given texture coordinates per vertex
+attribute vec2 a_texCoord;
 
 uniform mat4 u_modelView;
 uniform mat3 u_normalMatrix;
