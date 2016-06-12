@@ -46,6 +46,10 @@ var elapsedTime = 0;
 var frameCount = 0;
 var lastTime = new Date().getTime();
 
+// light sources (rotation nodes)
+var mainLight1;
+var mainLight2;
+
 //load the required resources using a utility function
 loadResources({
   vs_gouraud: 'shader/gouraud.vs.glsl',
@@ -92,8 +96,8 @@ function createSceneGraph(gl, resources) {
   const root = new ShaderSGNode(createProgram(gl, resources.vs_phong, resources.fs_phong));
 
   // y axis of light source does not work as expected somehow
-  let mainLight1 = makeLight(gl, resources, 0, 10, 0);
-  let mainLight2 = makeLight(gl, resources, 10, -20, 10);
+  mainLight1 = makeLight(gl, resources, 0, 10, 0);
+  mainLight2 = makeLight(gl, resources, 10, -20, 10);
 
   // main light sources
   root.append(mainLight1);  // upper light
@@ -234,6 +238,9 @@ function render(timeInMilliseconds) {
   if (timeInMilliseconds % 50) {
     sampleInputs();
   }
+
+  // rotate lower light just for fun
+  mainLight2.matrix = glm.rotateY(timeInMilliseconds*0.2);
 
   //setup viewport
   gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
