@@ -27,6 +27,11 @@ class FilterTextureSGNode extends SGNode {
         // mipmap needed for mimap filter
         gl.generateMipmap(gl.TEXTURE_2D);
 
+        // enable anisotropic filtering
+        var ext = gl.getExtension("WEBKIT_EXT_texture_filter_anisotropic");
+        var max_anisotropy = gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT);
+        gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, max_anisotropy);
+
         gl.bindTexture(gl.TEXTURE_2D, null);
     }
 
