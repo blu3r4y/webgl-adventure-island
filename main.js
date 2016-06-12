@@ -25,6 +25,7 @@ var vehicleNode;
 var pyramidNode;
 var billboard;
 
+var invertedCamera = false;
 var userControlled = false;
 var zoom = 0.2;
 
@@ -266,7 +267,8 @@ function initInteraction(canvas) {
   });
   canvas.addEventListener('mousemove', function(event) {
     const pos = toPos(event);
-    const delta = { x : mouse.pos.x - pos.x, y: mouse.pos.y - pos.y };
+    const delta = { x : mouse.pos.x - pos.x,
+                    y : invertedCamera ? mouse.pos.y - pos.y : pos.y - mouse.pos.y };
     if (mouse.leftButtonDown) {
       //add the relative movement of the mouse to the rotation variables
   		camera.rotation.x = getDegrees(camera.rotation.x - delta.x);
