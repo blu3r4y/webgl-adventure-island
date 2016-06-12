@@ -44,12 +44,12 @@ loadResources({
   fs_tex: 'shader/texture.fs.glsl',
   island_body: 'models/island_body.obj',
   island_plane: 'models/island_plane.obj',
-  vehicle: 'models/vehicle.obj',
   cross: 'models/cross.obj',
   tex_tree: 'models/tree2.png',
   tex_grass: 'models/grass.jpg',
   tex_test: 'models/tex_test.jpg',
-  tex_dry: 'models/dry.jpg'
+  tex_dry: 'models/dry.jpg',
+  rock: 'models/Rock/Rock.obj'
 }).then(function (resources /*an object containing our keys with the loaded resources*/) {
   init(resources);
 
@@ -132,6 +132,8 @@ function createSceneGraph(gl, resources) {
       ])
     ]);
   root.append(vehicleNode);
+
+  root.append(new RenderSGNode(resources.rock));
 
   return root;
 }
