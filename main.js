@@ -83,18 +83,18 @@ loadResources({
   tex_test: 'models/tex_test.jpg',
   tex_dry: 'models/dry.jpg',
   rock: 'models/Rock/Rock.obj',
-  env_night_pos_x: 'models/skybox/moon_rt.png',
-  env_night_neg_x: 'models/skybox/moon_lf.png',
-  env_night_pos_y: 'models/skybox/moon_up.png',
-  env_night_neg_y: 'models/skybox/moon_dn.png',
-  env_night_pos_z: 'models/skybox/moon_bk.png',
-  env_night_neg_z: 'models/skybox/moon_ft.png',
-  env_day_pos_x: 'models/skybox/tropical_rt.png',
-  env_day_neg_x: 'models/skybox/tropical_lf.png',
-  env_day_pos_y: 'models/skybox/tropical_up.png',
-  env_day_neg_y: 'models/skybox/tropical_dn.png',
-  env_day_pos_z: 'models/skybox/tropical_bk.png',
-  env_day_neg_z: 'models/skybox/tropical_ft.png'
+  env_night_pos_x: 'models/skybox/moon_rt_min.jpg',
+  env_night_neg_x: 'models/skybox/moon_lf_min.jpg',
+  env_night_pos_y: 'models/skybox/moon_up_min.jpg',
+  env_night_neg_y: 'models/skybox/moon_dn_min.jpg',
+  env_night_pos_z: 'models/skybox/moon_bk_min.jpg',
+  env_night_neg_z: 'models/skybox/moon_ft_min.jpg',
+  env_day_pos_x: 'models/skybox/tropical_rt_min.jpg',
+  env_day_neg_x: 'models/skybox/tropical_lf_min.jpg',
+  env_day_pos_y: 'models/skybox/tropical_up_min.jpg',
+  env_day_neg_y: 'models/skybox/tropical_dn_min.jpg',
+  env_day_pos_z: 'models/skybox/tropical_bk_min.jpg',
+  env_day_neg_z: 'models/skybox/tropical_ft_min.jpg'
 }).then(function (resources /*an object containing our keys with the loaded resources*/) {
   init(resources);
 
