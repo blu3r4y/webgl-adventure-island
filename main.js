@@ -6,25 +6,18 @@
 var gl = null;
 //Camera struct that stores the camera rotation mario
 const camera = {
-  /*rotation: {
-    x: 270,
-    y: 210
-  },*/
   rotation: {
     x: 180,
     y: 180
   },
-  /*pos: {
-    x: -5,
-    y: 5,
-    z: -40
-  }*/
   pos: {
     x: 0,
     y: 5,
     z: -40
   }
 };
+
+var lookAtZ = 40;
 
 //scene graph nodes
 var root = null;
@@ -225,7 +218,7 @@ function render(timeInMilliseconds) {
   const context = createSGContext(gl);
   context.projectionMatrix = mat4.perspective(mat4.create(), 30, gl.drawingBufferWidth / gl.drawingBufferHeight, 0.01, 100);
   //very primitive camera implementation
-  let lookAtMatrix = mat4.lookAt(mat4.create(), vec3.fromValues(camera.pos.x, camera.pos.y, camera.pos.z), vec3.fromValues(camera.pos.x, camera.pos.y, 0), vec3.fromValues(0,1,0));
+  let lookAtMatrix = mat4.lookAt(mat4.create(), vec3.fromValues(camera.pos.x, camera.pos.y, camera.pos.z), vec3.fromValues(camera.pos.x, camera.pos.y, lookAtZ), vec3.fromValues(0,1,0));
   let mouseRotateMatrix = mat4.multiply(mat4.create(),
                           glm.rotateX(camera.rotation.y),
                           glm.rotateY(camera.rotation.x));
@@ -326,45 +319,38 @@ function initInteraction(canvas) {
 function moveForward(){
   let zpart = -Math.cos(deg2rad(camera.rotation.x));
   let xpart = Math.sin(deg2rad(camera.rotation.x));
-  camera.pos.z = camera.pos.z + zoom*zpart;
-  if(camera.pos.z > 0){
-    camera.pos.z = -0.1;
-  }
-  camera.pos.x = camera.pos.x + zoom*xpart;
-  console.log("z :" + camera.pos.z);
+  move(zpart, xpart);
 }
 
 function moveBackwards(){
   let zpart = Math.cos(deg2rad(camera.rotation.x));
   let xpart = -Math.sin(deg2rad(camera.rotation.x));
   camera.pos.z = camera.pos.z + zoom*zpart;
-  if(camera.pos.z > 0){
-    camera.pos.z = -0.01;
+  if(camera.pos.z > lookAtZ){
+    //camera.pos.z = -0.01;
   }
-  camera.pos.x = camera.pos.x + zoom*xpart;
-  console.log("z :" + camera.pos.z);
+  move(zpart, xpart);
 }
 
 function moveRight(){
   let zpart = Math.sin(deg2rad(camera.rotation.x));
   let xpart = Math.cos(deg2rad(camera.rotation.x));
-  camera.pos.z = camera.pos.z + zoom*zpart;
-  if(camera.pos.z > 0){
-    camera.pos.z = -0.1;
-  }
-  camera.pos.x = camera.pos.x + zoom*xpart;
-  console.log("z :" + camera.pos.z);
+  move(zpart, xpart);
 }
 
 function moveLeft(){
   let zpart = -Math.sin(deg2rad(camera.rotation.x));
   let xpart = -Math.cos(deg2rad(camera.rotation.x));
+  move(zpart, xpart);
+}
+
+function move(zpart, xpart){
   camera.pos.z = camera.pos.z + zoom*zpart;
-  if(camera.pos.z > 0){
-    camera.pos.z = -0.1;
+  if(camera.pos.z > lookAtZ){
+    camera.pos.z = lookAtZ + 0.01;
   }
   camera.pos.x = camera.pos.x + zoom*xpart;
-  console.log("z :" + camera.pos.z);
+  console.log("z :" + camera.pos.z, "x :" + camera.pos.x);
 }
 
 function deg2rad(degrees) {
