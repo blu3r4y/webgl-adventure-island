@@ -4,18 +4,30 @@
 'use strict';
 
 var gl = null;
-//Camera struct that stores the camera rotation mario
+//Camera struct that stores the camera sollRotation mario
 const camera = {
-  rotation: {
+  sollRotation: {
     x: 180,
     y: 180
   },
-  pos: {
+  istRotation: {
+    x: 180,
+    y: 180
+  },
+  sollPos: {
+    x: 0,
+    y: 5,
+    z: -40
+  },
+  istPos: {
     x: 0,
     y: 5,
     z: -40
   }
 };
+
+// remembers pressed keys
+var keyMap = [];
 
 var lookAtZ = 40;
 
@@ -215,6 +227,14 @@ function render(timeInMilliseconds) {
   //vehicleNode.matrix = glm.rotateY(timeInMilliseconds*-0.01);
   //rotateLight.matrix = glm.rotateY(timeInMilliseconds*0.05);
 
+  // advance camera position
+  cameraControlLoop();
+
+  // sample mouse and keyboard input every 50 milliseconds
+  if (timeInMilliseconds % 50) {
+    sampleInputs();
+  }
+
   //setup viewport
   gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
   gl.clearColor(0.9, 0.9, 0.9, 1.0);
@@ -226,13 +246,13 @@ function render(timeInMilliseconds) {
   const context = createSGContext(gl);
   context.projectionMatrix = mat4.perspective(mat4.create(), 30, gl.drawingBufferWidth / gl.drawingBufferHeight, 0.01, 100);
   //very primitive camera implementation
-  let lookAtMatrix = mat4.lookAt(mat4.create(), vec3.fromValues(camera.pos.x, camera.pos.y, camera.pos.z), vec3.fromValues(camera.pos.x, camera.pos.y, lookAtZ), vec3.fromValues(0,1,0));
+  let lookAtMatrix = mat4.lookAt(mat4.create(), vec3.fromValues(camera.istPos.x, camera.istPos.y, camera.istPos.z), vec3.fromValues(camera.istPos.x, camera.istPos.y, lookAtZ), vec3.fromValues(0,1,0));
   let mouseRotateMatrix = mat4.multiply(mat4.create(),
-                          glm.rotateX(camera.rotation.y),
-                          glm.rotateY(camera.rotation.x));
+                          glm.rotateX(camera.istRotation.y),
+                          glm.rotateY(camera.istRotation.x));
 //  context.viewMatrix = mat4.multiply(mat4.create(), lookAtMatrix, mouseRotateMatrix);
   context.viewMatrix = mat4.multiply(mat4.create(), mouseRotateMatrix, lookAtMatrix);
-  if(camera.pos.z < -15 && !userControlled){
+  if(camera.istPos.z < -15 && !userControlled){
       moveForward();
   }
   else
@@ -251,6 +271,68 @@ function render(timeInMilliseconds) {
   //animate
   requestAnimationFrame(render);
   measureFps();
+}
+
+function sampleInputs()
+{
+  if(userControlled) {
+    //https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent
+    if (keyMap['ArrowUp'] || keyMap['KeyW']) {
+      moveForward();
+    }
+    else if (keyMap['ArrowDown'] || keyMap['KeyS']) {
+      moveBackwards();
+    }
+    if (keyMap['ArrowRight'] || keyMap['KeyD']) {
+      moveRight();
+    }
+    else if (keyMap['ArrowLeft'] || keyMap['KeyA']) {
+      moveLeft();
+    }
+  }
+}
+
+// advances the cameras ist position towards the soll position
+function cameraControlLoop()
+{
+  let c = 0.1;
+  let r = 0.14;
+
+  camera.istPos.x += diffValueController(camera.istPos.x, camera.sollPos.x, c);
+  camera.istPos.y += diffValueController(camera.istPos.y, camera.sollPos.y, c);
+  camera.istPos.z += diffValueController(camera.istPos.z, camera.sollPos.z, c);
+
+  camera.istRotation.x += rotDiffValueController(camera.istRotation.x, camera.sollRotation.x, r);
+  camera.istRotation.x = (camera.istRotation.x + 360) % 360;
+  camera.istRotation.y += rotDiffValueController(camera.istRotation.y, camera.sollRotation.y, r);
+  camera.istRotation.y = (camera.istRotation.y + 360) % 360;
+}
+
+// calcutes a simple linear difference between the src and dest value
+function diffValueController(src, dest, k)
+{
+  let diff = dest - src;
+
+  // return scaled difference if the value exceeds the minimum error allowed
+  if (Math.abs(diff) > 0.1) return diff * k;
+  return 0;
+}
+
+// calcutes a simple linear difference between the src and dest value
+// with respect to degree values which have the special property to overflow at 360 back to 0.
+function rotDiffValueController(src, dest, k)
+{
+  let diff = dest - src;
+
+  if (Math.abs(diff) > 180)
+  {
+    // if we move through 0 or 360 the controller needs to pass this point too
+    diff = (src > dest ? diff + 360 : diff - 360) % 360;
+  }
+
+  // return scaled difference if the value exceeds the minimum error allowed
+  if (Math.abs(diff) > 1) return diff * k;
+  return 0;
 }
 
 // fps measurement - taken from http://stackoverflow.com/a/16432859
@@ -296,14 +378,14 @@ function initInteraction(canvas) {
     const delta = { x : mouse.pos.x - pos.x,
                     y : invertedCamera ? mouse.pos.y - pos.y : pos.y - mouse.pos.y };
     if (mouse.leftButtonDown) {
-      //add the relative movement of the mouse to the rotation variables
-  		camera.rotation.x = getDegrees(camera.rotation.x - delta.x);
-      let ang = getDegrees(camera.rotation.y - delta.y);
+      //add the relative movement of the mouse to the sollRotation variables
+  		camera.sollRotation.x = getDegrees(camera.sollRotation.x - delta.x);
+      let ang = getDegrees(camera.sollRotation.y - delta.y);
       if(ang > 100 && ang < 260)
       {
-        camera.rotation.y = ang;
+        camera.sollRotation.y = ang;
       }
-    //  console.log("x: " + camera.rotation.x, "y: " + camera.rotation.y, "z: " + -Math.cos(deg2rad(camera.rotation.x)), "x: " + -Math.sin(deg2rad(camera.rotation.x)));
+      //console.log("x: " + camera.sollRotation.x, "y: " + camera.sollRotation.y, "z: " + -Math.cos(deg2rad(camera.sollRotation.x)), "x: " + -Math.sin(deg2rad(camera.sollRotation.x)));
     }
     mouse.pos = pos;
   });
@@ -318,22 +400,13 @@ function initInteraction(canvas) {
       userControlled = !userControlled;
     }
   });
+  // map pressed keys
   document.addEventListener('keydown', function(event) {
-    //https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent
-    if(userControlled) {
-      if ((event.code === 'ArrowUp' || event.code === 'KeyW')) {
-        moveForward();
-      }
-      else if (event.code === 'ArrowDown' || event.code === 'KeyS') {
-        moveBackwards();
-      }
-      else if (event.code === 'ArrowRight' || event.code === 'KeyD') {
-        moveRight();
-      }
-      else if (event.code === 'ArrowLeft' || event.code === 'KeyA') {
-        moveLeft();
-      }
-    }
+    keyMap[event.code] = true;
+  });
+  // unmap pressed keys
+  document.addEventListener('keyup', function(event) {
+    keyMap[event.code] = false;
   });
 
   function getDegrees(angle){
@@ -347,40 +420,40 @@ function initInteraction(canvas) {
 }
 
 function moveForward(){
-  let zpart = -Math.cos(deg2rad(camera.rotation.x));
-  let xpart = Math.sin(deg2rad(camera.rotation.x));
+  let zpart = -Math.cos(deg2rad(camera.sollRotation.x));
+  let xpart = Math.sin(deg2rad(camera.sollRotation.x));
   move(zpart, xpart);
 }
 
 function moveBackwards(){
-  let zpart = Math.cos(deg2rad(camera.rotation.x));
-  let xpart = -Math.sin(deg2rad(camera.rotation.x));
-  camera.pos.z = camera.pos.z + zoom*zpart;
-  if(camera.pos.z > lookAtZ){
-    //camera.pos.z = -0.01;
+  let zpart = Math.cos(deg2rad(camera.sollRotation.x));
+  let xpart = -Math.sin(deg2rad(camera.sollRotation.x));
+  camera.sollPos.z = camera.sollPos.z + zoom*zpart;
+  if(camera.sollPos.z > lookAtZ){
+    //camera.sollPos.z = -0.01;
   }
   move(zpart, xpart);
 }
 
 function moveRight(){
-  let zpart = Math.sin(deg2rad(camera.rotation.x));
-  let xpart = Math.cos(deg2rad(camera.rotation.x));
+  let zpart = Math.sin(deg2rad(camera.sollRotation.x));
+  let xpart = Math.cos(deg2rad(camera.sollRotation.x));
   move(zpart, xpart);
 }
 
 function moveLeft(){
-  let zpart = -Math.sin(deg2rad(camera.rotation.x));
-  let xpart = -Math.cos(deg2rad(camera.rotation.x));
+  let zpart = -Math.sin(deg2rad(camera.sollRotation.x));
+  let xpart = -Math.cos(deg2rad(camera.sollRotation.x));
   move(zpart, xpart);
 }
 
 function move(zpart, xpart){
-  camera.pos.z = camera.pos.z + zoom*zpart;
-  if(camera.pos.z > lookAtZ){
-    camera.pos.z = lookAtZ + 0.01;
+  camera.sollPos.z = camera.sollPos.z + zoom*zpart;
+  if(camera.sollPos.z > lookAtZ){
+    camera.sollPos.z = lookAtZ + 0.01;
   }
-  camera.pos.x = camera.pos.x + zoom*xpart;
-  //console.log("z :" + camera.pos.z, "x :" + camera.pos.x);
+  camera.sollPos.x = camera.sollPos.x + zoom*xpart;
+  //console.log("z :" + camera.sollPos.z, "x :" + camera.sollPos.x);
 }
 
 function deg2rad(degrees) {
