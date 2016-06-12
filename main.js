@@ -29,6 +29,11 @@ var invertedCamera = false;
 var userControlled = false;
 var zoom = 0.2;
 
+// fps measurement - taken from http://stackoverflow.com/a/16432859
+var elapsedTime = 0;
+var frameCount = 0;
+var lastTime = new Date().getTime();
+
 //load the required resources using a utility function
 loadResources({
   vs_gouraud: 'shader/gouraud.vs.glsl',
@@ -245,6 +250,27 @@ function render(timeInMilliseconds) {
 
   //animate
   requestAnimationFrame(render);
+  measureFps();
+}
+
+// fps measurement - taken from http://stackoverflow.com/a/16432859
+function measureFps()
+{
+  var now = new Date().getTime();
+
+  frameCount++;
+  elapsedTime += (now - lastTime);
+
+  lastTime = now;
+
+  if (elapsedTime >= 1000)
+  {
+    let fps = frameCount;
+    frameCount = 0;
+    elapsedTime -= 1000;
+
+    console.log(fps + " fps");
+  }
 }
 
 //camera control
@@ -354,7 +380,7 @@ function move(zpart, xpart){
     camera.pos.z = lookAtZ + 0.01;
   }
   camera.pos.x = camera.pos.x + zoom*xpart;
-  console.log("z :" + camera.pos.z, "x :" + camera.pos.x);
+  //console.log("z :" + camera.pos.z, "x :" + camera.pos.x);
 }
 
 function deg2rad(degrees) {
