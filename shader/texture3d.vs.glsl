@@ -18,6 +18,9 @@ varying vec3 v_lightVec;
 
 varying vec2 v_texCoord;
 
+// texture scaling factor
+uniform float u_scale;
+
 void main()
 {
     vec4 eyePosition = u_modelView * vec4(a_position,1);
@@ -26,7 +29,7 @@ void main()
     v_lightVec = u_lightPos - eyePosition.xyz;
 
     // basic projection
-    v_texCoord = a_position.xz * 0.2;
+    v_texCoord = a_position.xz * u_scale;
 
     gl_Position = u_projection * eyePosition;
 }
