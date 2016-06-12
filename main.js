@@ -50,6 +50,15 @@ var lastTime = new Date().getTime();
 var mainLight1;
 var mainLight2;
 
+// skybox texture
+var envcubetexture;
+
+// active cubemap day = 0, night = 1
+var activeCubeMap = 0;
+
+// link to global resources
+var resourcesGlobal;
+
 //load the required resources using a utility function
 loadResources({
   vs_gouraud: 'shader/gouraud.vs.glsl',
@@ -64,6 +73,8 @@ loadResources({
   fs_tex3d: 'shader/texture3d.fs.glsl',
   vs_tex3d: 'shader/texture3d.vs.glsl',
   fs_tex: 'shader/texture.fs.glsl',
+  vs_env: 'shader/envmap.vs.glsl',
+  fs_env: 'shader/envmap.fs.glsl',
   island_body: 'models/island_body.obj',
   island_plane: 'models/island_plane.obj',
   cross: 'models/cross.obj',
@@ -71,7 +82,19 @@ loadResources({
   tex_grass: 'models/grass.jpg',
   tex_test: 'models/tex_test.jpg',
   tex_dry: 'models/dry.jpg',
-  rock: 'models/Rock/Rock.obj'
+  rock: 'models/Rock/Rock.obj',
+  env_night_pos_x: 'models/skybox/moon_rt.png',
+  env_night_neg_x: 'models/skybox/moon_lf.png',
+  env_night_pos_y: 'models/skybox/moon_up.png',
+  env_night_neg_y: 'models/skybox/moon_dn.png',
+  env_night_pos_z: 'models/skybox/moon_bk.png',
+  env_night_neg_z: 'models/skybox/moon_ft.png',
+  env_day_pos_x: 'models/skybox/tropical_rt.png',
+  env_day_neg_x: 'models/skybox/tropical_lf.png',
+  env_day_pos_y: 'models/skybox/tropical_up.png',
+  env_day_neg_y: 'models/skybox/tropical_dn.png',
+  env_day_pos_z: 'models/skybox/tropical_bk.png',
+  env_day_neg_z: 'models/skybox/tropical_ft.png'
 }).then(function (resources /*an object containing our keys with the loaded resources*/) {
   init(resources);
 
@@ -79,8 +102,10 @@ loadResources({
 });
 
 function init(resources) {
+  resourcesGlobal = resources;
   //create a GL context
   gl = createContext(400, 400);
+  initCubeMap(resources);
 
   gl.enable(gl.DEPTH_TEST);
 
@@ -90,10 +115,73 @@ function init(resources) {
   initInteraction(gl.canvas);
 }
 
+function initCubeMap(resources) {
+  //create the texture
+  envcubetexture = gl.createTexture();
+  //define some texture unit we want to work on
+  gl.activeTexture(gl.TEXTURE0);
+  //bind the texture to the texture unit
+  gl.bindTexture(gl.TEXTURE_CUBE_MAP, envcubetexture);
+  //set sampling parameters
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
+  //gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_R, gl.MIRRORED_REPEAT); //will be available in WebGL 2
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+  gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+  //set correct image for each side of the cube map
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_day_pos_x);
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_day_neg_x);
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_day_pos_y);
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_day_neg_y);
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_day_pos_z);
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_day_neg_z);
+  //generate mipmaps (optional)
+  gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
+  //unbind the texture again
+  gl.bindTexture(gl.TEXTURE_CUBE_MAP, null);
+
+  activeCubeMap = 0;
+}
+
+function toggleCubeMapTexture(type)
+{
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_CUBE_MAP, envcubetexture);
+
+  if (type === 0)
+  {
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_day_pos_x);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_day_neg_x);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_day_pos_y);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_day_neg_y);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_day_pos_z);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_day_neg_z);
+  }
+  else
+  {
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_night_pos_x);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_night_neg_x);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_night_pos_y);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_night_neg_y);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_night_pos_z);
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_night_neg_z);
+  }
+
+  gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
+  gl.bindTexture(gl.TEXTURE_CUBE_MAP, null);
+
+  activeCubeMap = type;
+}
+
 function createSceneGraph(gl, resources) {
 
   // phong shader as root
   const root = new ShaderSGNode(createProgram(gl, resources.vs_phong, resources.fs_phong));
+
+  //add skybox by putting large sphere around us
+  var skybox = new ShaderSGNode(createProgram(gl, resources.vs_env, resources.fs_env), [ new EnvironmentSGNode(envcubetexture, 4, false,
+      new RenderSGNode(makeSphere(50))) ]);
+  root.append(skybox);
 
   // y axis of light source does not work as expected somehow
   mainLight1 = makeLight(gl, resources, 0, 10, 0);
@@ -405,6 +493,10 @@ function initInteraction(canvas) {
     //https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent
     if (event.code === 'KeyC') {
       userControlled = !userControlled;
+    }
+    else if (event.code === 'KeyN')
+    {
+      toggleCubeMapTexture(activeCubeMap === 0 ? 1 : 0);
     }
   });
   // map pressed keys
