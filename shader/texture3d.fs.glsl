@@ -23,6 +23,11 @@ struct Light {
 	vec4 specular;
 };
 
+// antistropic filtering stuff (not used!!)
+//uniform vec2 u_textureSize;
+//uniform float u_kernel[9];
+//uniform float u_kernelWeight;
+
 //illumination related variables
 uniform Material u_material;
 uniform Light u_light;
@@ -63,6 +68,26 @@ vec4 calculateSimplePointLight(Light light, Material material, vec3 lightVec, ve
 }
 
 void main (void) {
+
+// antistropic filter (not used!!)
+/*
+
+   vec2 onePixel = vec2(1.0, 1.0) / u_textureSize;
+   vec4 colorSum =
+     calculateSimplePointLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec, texture2D(u_tex, v_texCoord + onePixel * vec2(-1, -1)) * u_kernel[0]) +
+     calculateSimplePointLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec, texture2D(u_tex, v_texCoord + onePixel * vec2( 0, -1)) * u_kernel[1]) +
+     calculateSimplePointLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec, texture2D(u_tex, v_texCoord + onePixel * vec2( 1, -1)) * u_kernel[2]) +
+     calculateSimplePointLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec, texture2D(u_tex, v_texCoord + onePixel * vec2(-1,  0)) * u_kernel[3]) +
+     calculateSimplePointLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec, texture2D(u_tex, v_texCoord + onePixel * vec2( 0,  0)) * u_kernel[4]) +
+     calculateSimplePointLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec, texture2D(u_tex, v_texCoord + onePixel * vec2( 1,  0)) * u_kernel[5]) +
+     calculateSimplePointLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec, texture2D(u_tex, v_texCoord + onePixel * vec2(-1,  1)) * u_kernel[6]) +
+     calculateSimplePointLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec, texture2D(u_tex, v_texCoord + onePixel * vec2( 0,  1)) * u_kernel[7]) +
+     calculateSimplePointLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec, texture2D(u_tex, v_texCoord + onePixel * vec2( 1,  1)) * u_kernel[8]);
+
+   // Divide the sum by the weight but just use rgb
+   // we'll set alpha to 1.0
+   gl_FragColor = vec4((colorSum / u_kernelWeight).rgb, 1.0);
+*/
 
 		vec4 textureColor = texture2D(u_tex, v_texCoord);
         gl_FragColor = calculateSimplePointLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec, textureColor);
