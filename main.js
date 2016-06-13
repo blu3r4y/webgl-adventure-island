@@ -86,7 +86,7 @@ var refractionFrameBuf;
 var frameBufferWidth = 256;
 var frameBufferHeight = 256;
 
-var waterResolution = 1.5;
+var waterResolution = 4.0;
 
 var reflectionColorTex;
 var reflectionColorTexUnit = 20;
@@ -102,7 +102,7 @@ var islandBodyFilter = null;
 
 var waterHeight = -1;
 
-var filterTexture;
+var waterShaderNode;
 
 //load the required resources using a utility function
 loadResources({
@@ -133,6 +133,7 @@ loadResources({
   tex_dry: 'models/island/texture/dry.jpg',
   rock: 'models/stone/models/stone.obj',
   tex_rock: 'models/stone/texture/texture.jpg',
+  tex_dudv: 'models/water/dudv.jpg',
   crab: 'models/crab/crab.obj',
   env_night_pos_x: 'models/skybox/moon_rt_min.jpg',
   env_night_neg_x: 'models/skybox/moon_lf_min.jpg',
@@ -324,9 +325,9 @@ function toggleCubeMapTexture(type)
 
 function createWaterNode(gl, resources)
 {
+  waterShaderNode = new WaterTextureSGNode(reflectionColorTex, reflectionColorTexUnit, refractionColorTex, refractionColorTexUnit, resources.tex_dudv, [0, 0, 0], [ new RenderSGNode(makeRect(9.4, 8.9)) ]);
     //let localRoot = new ShaderSGNode(createProgram(gl, resources.vs_phong, resources.fs_phong));
-   let waterDemo = new ShaderSGNode(createProgram(gl, resources.vs_texWater, resources.fs_texWater), [ new MaterialSGNode([
-     new WaterTextureSGNode(reflectionColorTex, reflectionColorTexUnit, refractionColorTex, refractionColorTexUnit, [ new RenderSGNode(makeRect(9.4, 8.9)) ]) ]) ]);
+   let waterDemo = new ShaderSGNode(createProgram(gl, resources.vs_texWater, resources.fs_texWater), [ waterShaderNode ]);
   //localRoot.append(waterTransform);
   return new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({
     translate: [-2.2, waterHeight, -2.2],
@@ -514,6 +515,12 @@ function render(timeInMilliseconds) {
   // rotate lower light just for fun
   mainLight2.matrix = glm.rotateY(timeInMilliseconds*0.2);
 
+  // animate water
+  waterShaderNode.waveOffset += 0.0002;
+  waterShaderNode.waveOffset %= 1.0;
+  // set camera pos for water fresel effect
+  waterShaderNode.camera = [camera.istPos.x, camera.istPos.y, camera.istPos.z];
+
   //Animate pyramid always
   pyramidNode.matrix = glm.rotateZ(timeInMilliseconds*-0.01);
   // Animate rock every 100 ms
@@ -692,6 +699,12 @@ function sampleInputs()
     else if (keyMap['ArrowLeft'] || keyMap['KeyA']) {
       moveLeft();
     }
+    if (keyMap['KeyQ']) {
+      moveUp();
+    }
+    else if (keyMap['KeyE']) {
+      moveDown();
+    }
   }
 }
 
@@ -826,36 +839,47 @@ function initInteraction(canvas) {
 
 }
 
+function moveUp()
+{
+  move(0., 0., 1.);
+}
+
+function moveDown()
+{
+  move(0., 0., -1.);
+}
+
 function moveForward(){
   let zpart = -Math.cos(deg2rad(camera.sollRotation.x));
   let xpart = Math.sin(deg2rad(camera.sollRotation.x));
-  move(zpart, xpart);
+  move(zpart, xpart, 0.);
 }
 
 function moveBackwards(){
   let zpart = Math.cos(deg2rad(camera.sollRotation.x));
   let xpart = -Math.sin(deg2rad(camera.sollRotation.x));
-  move(zpart, xpart);
+  move(zpart, xpart, 0.);
 }
 
 function moveRight(){
   let zpart = Math.sin(deg2rad(camera.sollRotation.x));
   let xpart = Math.cos(deg2rad(camera.sollRotation.x));
-  move(zpart, xpart);
+  move(zpart, xpart, 0.);
 }
 
 function moveLeft(){
   let zpart = -Math.sin(deg2rad(camera.sollRotation.x));
   let xpart = -Math.cos(deg2rad(camera.sollRotation.x));
-  move(zpart, xpart);
+  move(zpart, xpart, 0.);
 }
 
-function move(zpart, xpart){
+function move(zpart, xpart, ypart){
   camera.sollPos.z = camera.sollPos.z + zoom*zpart;
   if(camera.sollPos.z > lookAtZ){
     camera.sollPos.z = lookAtZ + 0.01;
   }
   camera.sollPos.x = camera.sollPos.x + zoom*xpart;
+  camera.sollPos.y = camera.sollPos.y + zoom*ypart;
   //console.log("z :" + camera.sollPos.z, "x :" + camera.sollPos.x);
 }
 
