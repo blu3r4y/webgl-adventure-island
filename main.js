@@ -52,6 +52,10 @@ var animateRock = true;
 var crabNode;
 var animateCrab = true;
 
+var crystalNode;
+var animateCrystal = true;
+var crystalY = 0;
+
 var invertedCamera = false;
 var userControlled = false;
 var zoom = 0.2;
@@ -114,7 +118,9 @@ loadResources({
   env_day_pos_y: 'models/skybox/tropical_up_min.jpg',
   env_day_neg_y: 'models/skybox/tropical_dn_min.jpg',
   env_day_pos_z: 'models/skybox/tropical_bk_min.jpg',
-  env_day_neg_z: 'models/skybox/tropical_ft_min.jpg'
+  env_day_neg_z: 'models/skybox/tropical_ft_min.jpg',
+  crystal: 'models/crystal/crystal.obj'
+  //crystal_tex: 'models/crystal/texture.jpg'
 }).then(function (resources /*an object containing our keys with the loaded resources*/) {
   init(resources);
 
@@ -277,6 +283,18 @@ function createSceneGraph(gl, resources) {
         crab ])
     ]);
   root.append(new TransformationSGNode(glm.transform({ translate: [rock.pos.x, 0, rock.pos.z], rotateY: 270}),  [crabNode]));
+//  root.append(new ShaderSGNode(createProgram(gl, resources.vs_single, resources.fs_single), [ new RenderSGNode(resources.crystal)]));
+//  let crystal = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex), [new MaterialSGNode([new FilterTextureSGNode(resources.tex_crystal, 0.2, [new RenderSGNode(resources.crystal)])])]);
+  let crystal = new MaterialSGNode([new RenderSGNode(resources.crystal)]);
+  crystal.ambient = [1, 1, 0.8, 1];
+  crystal.diffuse = [1, 1, 0.8, 1];
+  crystal.specular = [1, 1, 0.8, 1];
+  crystal.shininess = 0.5;
+  crystalNode = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({ translate: [0, 0, 2/0.025], rotateX: 90}),  [
+        crystal ])
+    ]);
+  root.append(new TransformationSGNode(glm.transform({ translate: [0, 0, 7], scale: 0.025}) , crystalNode));
+
   return root;
 }
 
@@ -394,10 +412,16 @@ function render(timeInMilliseconds) {
     //Alternate between 0 and 1
     rock.pos.y = (rock.pos.y+1)&1;
     rockNode.matrix = glm.transform({ translate: [rock.pos.x, rock.pos.y*0.1, rock.pos.z], scale: 0.75});
-    animationTime = timeInMilliseconds;
   }
+  animationTime = timeInMilliseconds;
   if(animateCrab){
     crabNode.matrix = glm.rotateY(timeInMilliseconds*-0.1);
+  }
+  if(animateCrystal){
+    crystalNode.matrix = glm.transform({translate: [0, crystalY++, 0], rotateY: timeInMilliseconds*-0.1});
+    if(crystalY > 10/0.025){
+      animateCrystal = false;
+    }
   }
   //get inverse view matrix to allow computing eye-to-light matrix
   context.invViewMatrix = mat4.invert(mat4.create(), context.viewMatrix);
