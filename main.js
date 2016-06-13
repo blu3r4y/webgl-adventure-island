@@ -86,7 +86,7 @@ var refractionFrameBuf;
 var frameBufferWidth = 256;
 var frameBufferHeight = 256;
 
-var waterResolution = 2.0;
+var waterResolution = 1.5;
 
 var reflectionColorTex;
 var reflectionColorTexUnit = 20;
@@ -622,9 +622,10 @@ function renderReflection(timeInMilliseconds)
   //very primitive camera implementation
 //  context.viewMatrix = mat4.multiply(mat4.create(), lookAtMatrix, mouseRotateMatrix);
   let distanceToWater = camera.istPos.y - waterHeight;
-  let lookAtMatrix = mat4.lookAt(mat4.create(), vec3.fromValues(camera.istPos.x, camera.istPos.y - 2*distanceToWater, camera.istPos.z), vec3.fromValues(camera.istPos.x, camera.istPos.y, lookAtZ), vec3.fromValues(0,1,0));
+  let lookAtMatrix = mat4.lookAt(mat4.create(), vec3.fromValues(camera.istPos.x, camera.istPos.y - 2*distanceToWater, camera.istPos.z),
+      vec3.fromValues(camera.istPos.x, camera.istPos.y - 2*distanceToWater, lookAtZ), vec3.fromValues(0,1,0));
   let mouseRotateMatrix = mat4.multiply(mat4.create(),
-      glm.rotateX((-camera.istRotation.y + 360) % 360),
+      glm.rotateX(-camera.istRotation.y),
       glm.rotateY(camera.istRotation.x));
 //  context.viewMatrix = mat4.multiply(mat4.create(), lookAtMatrix, mouseRotateMatrix);
   contextWater.viewMatrix = mat4.multiply(mat4.create(), mouseRotateMatrix, lookAtMatrix);
