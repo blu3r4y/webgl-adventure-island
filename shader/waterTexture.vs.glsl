@@ -8,7 +8,8 @@ uniform mat4 u_modelView;
 uniform mat3 u_normalMatrix;
 uniform mat4 u_projection;
 
-varying vec2 v_texCoord;
+//varying vec2 v_texCoord;
+varying vec4 v_clipSpace;
 
 void main()
 {
@@ -17,7 +18,8 @@ void main()
     //v_eyeVec = -eyePosition.xyz;
 
     // basic projection
-    v_texCoord = a_texCoord;
+    //v_texCoord = a_texCoord;
 
-    gl_Position = u_projection * eyePosition;
+    v_clipSpace = u_projection * eyePosition;
+    gl_Position = v_clipSpace;
 }

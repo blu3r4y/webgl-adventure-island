@@ -83,8 +83,10 @@ var resourcesGlobal;
 var reflectionFrameBuf;
 var refractionFrameBuf;
 
-var framebufferWidth = 256;
-var framebufferHeight = 256;
+var frameBufferWidth = 256;
+var frameBufferHeight = 256;
+
+var waterResolution = 2.0;
 
 var reflectionColorTex;
 var reflectionColorTexUnit = 20;
@@ -97,6 +99,8 @@ var refractionDepthTexUnit = 22;
 
 var islandPlaneFilter = null;
 var islandBodyFilter = null;
+
+var waterHeight = -1;
 
 var filterTexture;
 
@@ -152,6 +156,7 @@ function init(resources) {
   resourcesGlobal = resources;
   //create a GL context
   gl = createContext(400, 400);
+  checkForWindowResize(gl);
   initCubeMap(resources);
   initRenderToTexture();
 
@@ -197,10 +202,13 @@ function initCubeMap(resources) {
   activeCubeMap = 0;
 }
 
+
 function initRenderToTexture() {
   var depthTextureExt = gl.getExtension("WEBGL_depth_texture");
   if(!depthTextureExt) { alert('No depth texture support. Can not render water.'); return; }
 
+  frameBufferWidth = gl.drawingBufferWidth / waterResolution;
+  frameBufferHeight = gl.drawingBufferHeight / waterResolution;
 
   //
   //
@@ -220,7 +228,7 @@ function initRenderToTexture() {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, framebufferWidth, framebufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, frameBufferWidth, frameBufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
 
   // bind textures to framebuffer
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, reflectionColorTex, 0);
@@ -228,7 +236,7 @@ function initRenderToTexture() {
   // create depth buffer renderbuffer
   reflectionDepthBuf = gl.createRenderbuffer();
   gl.bindRenderbuffer(gl.RENDERBUFFER,  reflectionDepthBuf);
-  gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, framebufferWidth, framebufferHeight);
+  gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, frameBufferWidth, frameBufferHeight);
   gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, reflectionDepthBuf);
 
   console.log("gl.FRAMEBUFFER is " + gl.checkFramebufferStatus(gl.FRAMEBUFFER) + " = " + gl.FRAMEBUFFER_COMPLETE);
@@ -257,7 +265,7 @@ function initRenderToTexture() {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, framebufferWidth, framebufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, frameBufferWidth, frameBufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
 
   // bind textures to framebuffer
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, refractionColorTex, 0);
@@ -270,7 +278,7 @@ function initRenderToTexture() {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, framebufferWidth, framebufferHeight, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, frameBufferWidth, frameBufferHeight, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null);
 
   // bind textures to framebuffer
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, refractionDepthTex, 0);
@@ -317,15 +325,15 @@ function toggleCubeMapTexture(type)
 function createWaterNode(gl, resources)
 {
     //let localRoot = new ShaderSGNode(createProgram(gl, resources.vs_phong, resources.fs_phong));
-   let waterDemo = new ShaderSGNode(createProgram(gl, resources.vs_texWater, resources.fs_texWater), [ new MaterialSGNode([ new TextureSGNode(reflectionColorTex, reflectionColorTexUnit, [ new RenderSGNode(makeRect(9.4, 8.9)) ]) ]) ]);
-  let waterTransform = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({
-     translate: [-2.2, -1, -2.2],
-     rotateX: 90,
-     rotateZ: 40,
-     scale: 1.0
-   }), [waterDemo])]);
+   let waterDemo = new ShaderSGNode(createProgram(gl, resources.vs_texWater, resources.fs_texWater), [ new MaterialSGNode([
+     new WaterTextureSGNode(reflectionColorTex, reflectionColorTexUnit, refractionColorTex, refractionColorTexUnit, [ new RenderSGNode(makeRect(9.4, 8.9)) ]) ]) ]);
   //localRoot.append(waterTransform);
-  return waterTransform;
+  return new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({
+    translate: [-2.2, waterHeight, -2.2],
+    rotateX: 90,
+    rotateZ: 40,
+    scale: 1.0
+  }), [waterDemo])]);
 
 }
 
@@ -584,45 +592,73 @@ function render(timeInMilliseconds) {
 //draw scene for shadow map
 function renderToTexture(timeInMilliseconds)
 {
-  // clip everything underneath
   islandPlaneFilter.enableClipping = 1;
-  islandPlaneFilter.clipPlane = vec2.fromValues(1.0, -1.0);
   islandBodyFilter.enableClipping = 1;
-  islandBodyFilter.clipPlane = vec2.fromValues(1.0, -1.0);
+
+  renderReflection(timeInMilliseconds);
+  renderRefraction(timeInMilliseconds);
+
+  islandPlaneFilter.enableClipping = 0;
+  islandBodyFilter.enableClipping = 0;
+}
+
+function renderReflection(timeInMilliseconds)
+{
+  // clip everything underneath
+  islandPlaneFilter.clipPlane = vec2.fromValues(1.0, waterHeight);
+  islandBodyFilter.clipPlane = vec2.fromValues(1.0, waterHeight);
 
   //bind framebuffer to draw scene into texture
   gl.bindFramebuffer(gl.FRAMEBUFFER, reflectionFrameBuf);
 
   //setup viewport
-  gl.viewport(0, 0, framebufferWidth, framebufferHeight);
+  gl.viewport(0, 0, frameBufferWidth, frameBufferHeight);
   gl.clearColor(0.1, 0.1, 0.9, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-/*
-  //setup context and camera matrices
-  const context = createSGContext(gl);
-  //setup a projection matrix for the light camera which is large enough to capture our scene
-  context.projectionMatrix = mat4.perspective(mat4.create(), 30, framebufferWidth / framebufferHeight, 1, 10);
-  //compute the light's position in world space
-  let lightModelMatrix = mat4.multiply(mat4.create(), rotateLight.matrix, translateLight.matrix);
-  let lightPositionVector = vec4.fromValues(lightNode.position[0], lightNode.position[1], lightNode.position[2], 1);
-  let worldLightPos = vec4.transformMat4(vec4.create(), lightPositionVector, lightModelMatrix);
-  //let the light "shine" towards the scene center (i.e. towards C3PO)
-  let worldLightLookAtPos = [0,0,0];
-  let upVector = [0,1,0];
-  //TASK 1.1: setup camera to look at the scene from the light's perspective
-  let lookAtMatrix = mat4.lookAt(mat4.create(), worldLightPos, worldLightLookAtPos, upVector);
-  //let lookAtMatrix = mat4.lookAt(mat4.create(), [0,-1,-4], [0,0,0], [0,1,0]); //replace me for TASK 1.1
-  context.viewMatrix = lookAtMatrix;
 
-  //multiply and save light projection and view matrix for later use in shadow mapping shader!
-  shadowNode.lightViewProjectionMatrix = mat4.multiply(mat4.create(),context.projectionMatrix,context.viewMatrix);
-*/
   //setup context and camera matrices
   const contextWater = createSGContext(gl);
-  contextWater.projectionMatrix = mat4.perspective(mat4.create(), 30, framebufferWidth / framebufferHeight, 0.01, 100);
+  contextWater.projectionMatrix = mat4.perspective(mat4.create(), 30, frameBufferWidth / frameBufferHeight, 0.01, 100);
   //very primitive camera implementation
 //  context.viewMatrix = mat4.multiply(mat4.create(), lookAtMatrix, mouseRotateMatrix);
-  let lookAtMatrix = mat4.lookAt(mat4.create(), vec3.fromValues(camera.istPos.x, camera.istPos.y, camera.istPos.z), vec3.fromValues(0, 0, 0), vec3.fromValues(0,1,0));
+  let distanceToWater = camera.istPos.y - waterHeight;
+  let lookAtMatrix = mat4.lookAt(mat4.create(), vec3.fromValues(camera.istPos.x, camera.istPos.y - 2*distanceToWater, camera.istPos.z), vec3.fromValues(camera.istPos.x, camera.istPos.y, lookAtZ), vec3.fromValues(0,1,0));
+  let mouseRotateMatrix = mat4.multiply(mat4.create(),
+      glm.rotateX((-camera.istRotation.y + 360) % 360),
+      glm.rotateY(camera.istRotation.x));
+//  context.viewMatrix = mat4.multiply(mat4.create(), lookAtMatrix, mouseRotateMatrix);
+  contextWater.viewMatrix = mat4.multiply(mat4.create(), mouseRotateMatrix, lookAtMatrix);
+
+  //get inverse view matrix to allow computing eye-to-light matrix
+  contextWater.invViewMatrix = mat4.invert(mat4.create(), contextWater.viewMatrix);
+
+  //render scenegraph
+  root.render(contextWater); //scene graph without floor to avoid reading from the same texture as we write to...
+
+  // disable framebuffer (render to screen again)
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+}
+
+function renderRefraction(timeInMilliseconds)
+{
+  // clip everything underneath
+  islandPlaneFilter.clipPlane = vec2.fromValues(-1.0, waterHeight);
+  islandBodyFilter.clipPlane = vec2.fromValues(-1.0, -100.0);
+
+  //bind framebuffer to draw scene into texture
+  gl.bindFramebuffer(gl.FRAMEBUFFER, refractionFrameBuf);
+
+  //setup viewport
+  gl.viewport(0, 0, frameBufferWidth, frameBufferHeight);
+  gl.clearColor(0.1, 0.1, 0.9, 1.0);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  //setup context and camera matrices
+  const contextWater = createSGContext(gl);
+  contextWater.projectionMatrix = mat4.perspective(mat4.create(), 30, frameBufferWidth / frameBufferHeight, 0.01, 100);
+  //very primitive camera implementation
+//  context.viewMatrix = mat4.multiply(mat4.create(), lookAtMatrix, mouseRotateMatrix);
+  let lookAtMatrix = mat4.lookAt(mat4.create(), vec3.fromValues(camera.istPos.x, camera.istPos.y, camera.istPos.z), vec3.fromValues(camera.istPos.x, camera.istPos.y, lookAtZ), vec3.fromValues(0,1,0));
   let mouseRotateMatrix = mat4.multiply(mat4.create(),
       glm.rotateX(camera.istRotation.y),
       glm.rotateY(camera.istRotation.x));
@@ -637,10 +673,6 @@ function renderToTexture(timeInMilliseconds)
 
   // disable framebuffer (render to screen again)
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-
-  islandPlaneFilter.enableClipping = 0;
-  islandBodyFilter.enableClipping = 0;
 }
 
 function sampleInputs()
