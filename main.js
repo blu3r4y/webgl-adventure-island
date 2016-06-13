@@ -33,6 +33,8 @@ var lookAtZ = 40;
 
 //scene graph nodes
 var root = null;
+var rootWaterRender = null;
+var waterRoot = null;
 var vehicleNode;
 var pyramidNode;
 var billboard;
@@ -77,6 +79,27 @@ var activeCubeMap = 0;
 // link to global resources
 var resourcesGlobal;
 
+// water buffers
+var reflectionFrameBuf;
+var refractionFrameBuf;
+
+var framebufferWidth = 256;
+var framebufferHeight = 256;
+
+var reflectionColorTex;
+var reflectionColorTexUnit = 20;
+var reflectionDepthBuf;
+
+var refractionColorTex;
+var refractionColorTexUnit = 21;
+var refractionDepthTex;
+var refractionDepthTexUnit = 22;
+
+var islandPlaneFilter = null;
+var islandBodyFilter = null;
+
+var filterTexture;
+
 //load the required resources using a utility function
 loadResources({
   vs_gouraud: 'shader/gouraud.vs.glsl',
@@ -93,6 +116,10 @@ loadResources({
   fs_tex: 'shader/texture.fs.glsl',
   vs_env: 'shader/envmap.vs.glsl',
   fs_env: 'shader/envmap.fs.glsl',
+  vs_texSimple: 'shader/simpleTexture.vs.glsl',
+  fs_texSimple: 'shader/simpleTexture.fs.glsl',
+  vs_texWater: 'shader/waterTexture.vs.glsl',
+  fs_texWater: 'shader/waterTexture.fs.glsl',
   island_body: 'models/island/models/island_body.obj',
   island_plane: 'models/island/models/island_plane.obj',
   cross: 'models/cross.obj',
@@ -126,11 +153,14 @@ function init(resources) {
   //create a GL context
   gl = createContext(400, 400);
   initCubeMap(resources);
+  initRenderToTexture();
 
   gl.enable(gl.DEPTH_TEST);
 
   //create scenegraph
+  rootWaterRender = new ShaderSGNode(createProgram(gl, resources.vs_phong, resources.fs_phong));
   root = createSceneGraph(gl, resources);
+  waterRoot = createWaterNode(gl, resources);
 
   initInteraction(gl.canvas);
 }
@@ -167,6 +197,93 @@ function initCubeMap(resources) {
   activeCubeMap = 0;
 }
 
+function initRenderToTexture() {
+  var depthTextureExt = gl.getExtension("WEBGL_depth_texture");
+  if(!depthTextureExt) { alert('No depth texture support. Can not render water.'); return; }
+
+
+  //
+  //
+  //
+  // REFLECTION
+  // framebuffer + color buffer texture attachment + depth render buffer attachment
+
+  //generate color texture (required mainly for debugging and to avoid bugs in some WebGL platforms)
+  reflectionFrameBuf = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, reflectionFrameBuf);
+
+  // create color texture
+  reflectionColorTex = gl.createTexture();
+  gl.activeTexture(gl.TEXTURE0 + reflectionColorTexUnit);
+  gl.bindTexture(gl.TEXTURE_2D, reflectionColorTex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, framebufferWidth, framebufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+  // bind textures to framebuffer
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, reflectionColorTex, 0);
+
+  // create depth buffer renderbuffer
+  reflectionDepthBuf = gl.createRenderbuffer();
+  gl.bindRenderbuffer(gl.RENDERBUFFER,  reflectionDepthBuf);
+  gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, framebufferWidth, framebufferHeight);
+  gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, reflectionDepthBuf);
+
+  console.log("gl.FRAMEBUFFER is " + gl.checkFramebufferStatus(gl.FRAMEBUFFER) + " = " + gl.FRAMEBUFFER_COMPLETE);
+  if(gl.checkFramebufferStatus(gl.FRAMEBUFFER)!=gl.FRAMEBUFFER_COMPLETE)
+  {alert('Framebuffer incomplete. Can not render water.');}
+
+  // clean up
+  gl.bindTexture(gl.TEXTURE_2D, null);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+  //
+  //
+  //
+  // REFRACTION
+  // framebuffer + color buffer texture attachment + depth buffer texture attachment
+
+  //generate color texture (required mainly for debugging and to avoid bugs in some WebGL platforms)
+  refractionFrameBuf = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, refractionFrameBuf);
+
+  // create color texture
+  refractionColorTex = gl.createTexture();
+  gl.activeTexture(gl.TEXTURE0 + refractionColorTexUnit);
+  gl.bindTexture(gl.TEXTURE_2D, refractionColorTex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, framebufferWidth, framebufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+  // bind textures to framebuffer
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, refractionColorTex, 0);
+
+  // create depth texture
+  refractionDepthTex = gl.createTexture();
+  gl.activeTexture(gl.TEXTURE0 + refractionDepthTexUnit);
+  gl.bindTexture(gl.TEXTURE_2D, refractionDepthTex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, framebufferWidth, framebufferHeight, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null);
+
+  // bind textures to framebuffer
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, refractionDepthTex, 0);
+
+  console.log("gl.FRAMEBUFFER is " + gl.checkFramebufferStatus(gl.FRAMEBUFFER) + " = " + gl.FRAMEBUFFER_COMPLETE);
+  if(gl.checkFramebufferStatus(gl.FRAMEBUFFER)!=gl.FRAMEBUFFER_COMPLETE)
+  {alert('Framebuffer incomplete. Can not render water.');}
+
+  // clean up
+  gl.bindTexture(gl.TEXTURE_2D, null);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+}
+
 function toggleCubeMapTexture(type)
 {
   gl.activeTexture(gl.TEXTURE0);
@@ -197,6 +314,21 @@ function toggleCubeMapTexture(type)
   activeCubeMap = type;
 }
 
+function createWaterNode(gl, resources)
+{
+    //let localRoot = new ShaderSGNode(createProgram(gl, resources.vs_phong, resources.fs_phong));
+   let waterDemo = new ShaderSGNode(createProgram(gl, resources.vs_texWater, resources.fs_texWater), [ new MaterialSGNode([ new TextureSGNode(reflectionColorTex, reflectionColorTexUnit, [ new RenderSGNode(makeRect(9.4, 8.9)) ]) ]) ]);
+  let waterTransform = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({
+     translate: [-2.2, -1, -2.2],
+     rotateX: 90,
+     rotateZ: 40,
+     scale: 1.0
+   }), [waterDemo])]);
+  //localRoot.append(waterTransform);
+  return waterTransform;
+
+}
+
 function createSceneGraph(gl, resources) {
 
   // phong shader as root
@@ -224,7 +356,8 @@ function createSceneGraph(gl, resources) {
   vehicle.specular = [0.628281, 0.555802, 0.666065, 1];
   vehicle.shininess = 0.4;
 
-  let islandPlane = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [ new MaterialSGNode([ new FilterTextureSGNode(resources.tex_grass, 0.2, [ new RenderSGNode(resources.island_plane) ]) ]) ]);
+  islandPlaneFilter = new FilterTextureSGNode(resources.tex_grass, 0.2, [ new RenderSGNode(resources.island_plane) ]);
+  let islandPlane = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [ new MaterialSGNode([ islandPlaneFilter ]) ]);
   islandPlane.ambient = [0, 0.3, 0, 1];
   islandPlane.diffuse = [0.52, 0.86, 0.12, 1];
   islandPlane.specular = [0.1, 0.2, 0.15, 0.];
@@ -232,9 +365,11 @@ function createSceneGraph(gl, resources) {
   islandPlane.append(mainLight1);
   let rotateIslandPlane = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({ translate: [0,0,0], scale: 1.0 }), [ islandPlane ]) ]);
   root.append(rotateIslandPlane);
+  rootWaterRender.append(islandPlane);
 
   // lower part of the island
-  let islandBody = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [ new MaterialSGNode([ new FilterTextureSGNode(resources.tex_dry, 0.05, [ new RenderSGNode(resources.island_body) ]) ]) ]);
+  islandBodyFilter = new FilterTextureSGNode(resources.tex_dry, 0.05, [ new RenderSGNode(resources.island_body) ]);
+  let islandBody = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [ new MaterialSGNode([ islandBodyFilter ]) ]);
   islandBody.ambient = [0, 0.3, 0, 1];
   islandBody.diffuse = [0.52, 0.86, 0.12, 1];
   islandBody.specular = [0.1, 0.2, 0.15, 0.];
@@ -242,14 +377,7 @@ function createSceneGraph(gl, resources) {
   islandBody.append(mainLight2);
   let rotateIslandBody = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({ translate: [0,0,0], scale: 1.0 }), [ islandBody ]) ]);
   root.append(rotateIslandBody);
-
-  let waterDemo = new MaterialSGNode([ new RenderSGNode(makeRect(9.4, 8.9)) ]);
-  waterDemo.ambient = [0.3, 0.15, 0.12, 0.3];
-  waterDemo.diffuse = [0.52, 0.86, 0.98, 0.5];
-  waterDemo.specular = [0.1, 0.2, 0.25, 0.5];
-  waterDemo.shininess = 1.0;
-  let rotateWaterDemo = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({ translate: [-2.2,-1,-2.2], rotateX : 90, rotateZ : 40, scale: 1.0 }), [ waterDemo ]) ]);
-  root.append(rotateWaterDemo);
+  rootWaterRender.append(rotateIslandBody);
 
   // coordinate cross for debugging
   let coordinateCross = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({translate: [0, 0, 0], scale: 0.05}), [ new ShaderSGNode(createProgram(gl, resources.vs_cross, resources.fs_cross), [ new RenderSGNode(resources.cross) ]) ]) ]);
@@ -277,7 +405,31 @@ function createSceneGraph(gl, resources) {
         crab ])
     ]);
   root.append(new TransformationSGNode(glm.transform({ translate: [rock.pos.x, 0, rock.pos.z], rotateY: 270}),  [crabNode]));
+/*
+  let blahShader = new ShaderSGNode(createProgram(gl, resources.vs_texSimple, resources.fs_texSimple), [ new TextureSGNode(reflectionColorTex, reflectionColorTexUnit,
+          new RenderSGNode(makeRect(2,2))
+      )]);
+
+  root.append(blahShader);*/
+
+
   return root;
+}
+
+function createSolidTexture(gl, r, g, b, a) {
+  var data = new Uint8Array([r, g, b, a]);
+  var texture = gl.createTexture();
+  gl.activeTexture(gl.TEXTURE0 + texture);
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+
+  gl.activeTexture(gl.TEXTURE0 + texture);
+  gl.bindTexture(gl.TEXTURE_2D, null);
+
+  return texture;
 }
 
 function makeLight(gl, resources, x, y, z)
@@ -346,10 +498,29 @@ function makeBillboard() {
 function render(timeInMilliseconds) {
   checkForWindowResize(gl);
 
-  //update animations
+  // UPDATE ANIMATIONS START
   //Note: We have to update all animations before generating the shadow map!
   //vehicleNode.matrix = glm.rotateY(timeInMilliseconds*-0.01);
   //rotateLight.matrix = glm.rotateY(timeInMilliseconds*0.05);
+
+  // rotate lower light just for fun
+  mainLight2.matrix = glm.rotateY(timeInMilliseconds*0.2);
+
+  //Animate pyramid always
+  pyramidNode.matrix = glm.rotateZ(timeInMilliseconds*-0.01);
+  // Animate rock every 100 ms
+  if(animateRock && ((timeInMilliseconds - animationTime) > 100)){
+    //Alternate between 0 and 1
+    rock.pos.y = (rock.pos.y+1)&1;
+    rockNode.matrix = glm.transform({ translate: [rock.pos.x, rock.pos.y*0.1, rock.pos.z], scale: 0.75});
+    animationTime = timeInMilliseconds;
+  }
+  if(animateCrab){
+    crabNode.matrix = glm.rotateY(timeInMilliseconds*-0.1);
+  }
+
+  // UPDATE ANIMATIONS END
+  // CONTROL CAMERA AND INPUT START
 
   // advance camera position
   cameraControlLoop();
@@ -360,8 +531,22 @@ function render(timeInMilliseconds) {
     lastSampleTime = timeInMilliseconds;
   }
 
-  // rotate lower light just for fun
-  mainLight2.matrix = glm.rotateY(timeInMilliseconds*0.2);
+  if(camera.istPos.z < -15 && !userControlled){
+    moveForward();
+  }
+  else
+  {
+    userControlled = true;
+  }
+
+  // CONTROL CAMERA AND INPUT END
+  // WATER FRAME BUFFER OBJECT RENDER START
+
+  //draw scene for shadow map into texture
+  renderToTexture(timeInMilliseconds);
+
+  // WATER FRAME BUFFER OBJECT RENDER END
+  // MAIN SCENE RENDER START
 
   //setup viewport
   gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
@@ -380,34 +565,82 @@ function render(timeInMilliseconds) {
                           glm.rotateY(camera.istRotation.x));
 //  context.viewMatrix = mat4.multiply(mat4.create(), lookAtMatrix, mouseRotateMatrix);
   context.viewMatrix = mat4.multiply(mat4.create(), mouseRotateMatrix, lookAtMatrix);
-  if(camera.istPos.z < -15 && !userControlled){
-      moveForward();
-  }
-  else
-  {
-    userControlled = true;
-  }
-  //Animate pyramid always
-  pyramidNode.matrix = glm.rotateZ(timeInMilliseconds*-0.01);
-  // Animate rock every 100 ms
-  if(animateRock && ((timeInMilliseconds - animationTime) > 100)){
-    //Alternate between 0 and 1
-    rock.pos.y = (rock.pos.y+1)&1;
-    rockNode.matrix = glm.transform({ translate: [rock.pos.x, rock.pos.y*0.1, rock.pos.z], scale: 0.75});
-    animationTime = timeInMilliseconds;
-  }
-  if(animateCrab){
-    crabNode.matrix = glm.rotateY(timeInMilliseconds*-0.1);
-  }
   //get inverse view matrix to allow computing eye-to-light matrix
   context.invViewMatrix = mat4.invert(mat4.create(), context.viewMatrix);
 
   //render scenegraph
   root.render(context);
+  waterRoot.render(context);
+
+  // we rendered a frame
+  measureFps();
 
   //animate
   requestAnimationFrame(render);
-  measureFps();
+
+  // MAIN SCENE RENDER END
+}
+
+//draw scene for shadow map
+function renderToTexture(timeInMilliseconds)
+{
+  // clip everything underneath
+  islandPlaneFilter.enableClipping = 1;
+  islandPlaneFilter.clipPlane = vec2.fromValues(1.0, -1.0);
+  islandBodyFilter.enableClipping = 1;
+  islandBodyFilter.clipPlane = vec2.fromValues(1.0, -1.0);
+
+  //bind framebuffer to draw scene into texture
+  gl.bindFramebuffer(gl.FRAMEBUFFER, reflectionFrameBuf);
+
+  //setup viewport
+  gl.viewport(0, 0, framebufferWidth, framebufferHeight);
+  gl.clearColor(0.1, 0.1, 0.9, 1.0);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+/*
+  //setup context and camera matrices
+  const context = createSGContext(gl);
+  //setup a projection matrix for the light camera which is large enough to capture our scene
+  context.projectionMatrix = mat4.perspective(mat4.create(), 30, framebufferWidth / framebufferHeight, 1, 10);
+  //compute the light's position in world space
+  let lightModelMatrix = mat4.multiply(mat4.create(), rotateLight.matrix, translateLight.matrix);
+  let lightPositionVector = vec4.fromValues(lightNode.position[0], lightNode.position[1], lightNode.position[2], 1);
+  let worldLightPos = vec4.transformMat4(vec4.create(), lightPositionVector, lightModelMatrix);
+  //let the light "shine" towards the scene center (i.e. towards C3PO)
+  let worldLightLookAtPos = [0,0,0];
+  let upVector = [0,1,0];
+  //TASK 1.1: setup camera to look at the scene from the light's perspective
+  let lookAtMatrix = mat4.lookAt(mat4.create(), worldLightPos, worldLightLookAtPos, upVector);
+  //let lookAtMatrix = mat4.lookAt(mat4.create(), [0,-1,-4], [0,0,0], [0,1,0]); //replace me for TASK 1.1
+  context.viewMatrix = lookAtMatrix;
+
+  //multiply and save light projection and view matrix for later use in shadow mapping shader!
+  shadowNode.lightViewProjectionMatrix = mat4.multiply(mat4.create(),context.projectionMatrix,context.viewMatrix);
+*/
+  //setup context and camera matrices
+  const contextWater = createSGContext(gl);
+  contextWater.projectionMatrix = mat4.perspective(mat4.create(), 30, framebufferWidth / framebufferHeight, 0.01, 100);
+  //very primitive camera implementation
+//  context.viewMatrix = mat4.multiply(mat4.create(), lookAtMatrix, mouseRotateMatrix);
+  let lookAtMatrix = mat4.lookAt(mat4.create(), vec3.fromValues(camera.istPos.x, camera.istPos.y, camera.istPos.z), vec3.fromValues(0, 0, 0), vec3.fromValues(0,1,0));
+  let mouseRotateMatrix = mat4.multiply(mat4.create(),
+      glm.rotateX(camera.istRotation.y),
+      glm.rotateY(camera.istRotation.x));
+//  context.viewMatrix = mat4.multiply(mat4.create(), lookAtMatrix, mouseRotateMatrix);
+  contextWater.viewMatrix = mat4.multiply(mat4.create(), mouseRotateMatrix, lookAtMatrix);
+
+  //get inverse view matrix to allow computing eye-to-light matrix
+  contextWater.invViewMatrix = mat4.invert(mat4.create(), contextWater.viewMatrix);
+
+  //render scenegraph
+  root.render(contextWater); //scene graph without floor to avoid reading from the same texture as we write to...
+
+  // disable framebuffer (render to screen again)
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+
+  islandPlaneFilter.enableClipping = 0;
+  islandBodyFilter.enableClipping = 0;
 }
 
 function sampleInputs()

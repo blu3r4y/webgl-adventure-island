@@ -39,6 +39,10 @@ varying vec3 v_lightVec;
 uniform sampler2D u_tex;
 varying vec2 v_texCoord;
 
+uniform bool u_enableClipPlane;
+uniform vec2 u_simpleClipPlane;
+varying vec3 v_position;
+
 vec4 calculateSimplePointLight(Light light, Material material, vec3 lightVec, vec3 normalVec, vec3 eyeVec, vec4 textureColor) {
 	lightVec = normalize(lightVec);
 	normalVec = normalize(normalVec);
@@ -69,6 +73,7 @@ vec4 calculateSimplePointLight(Light light, Material material, vec3 lightVec, ve
 
 void main (void) {
 
+if (u_enableClipPlane) if (u_simpleClipPlane.x > 0.0 ? v_position.y < u_simpleClipPlane.y : v_position.y > u_simpleClipPlane.y) discard;
 // antistropic filter (not used!!)
 /*
 
