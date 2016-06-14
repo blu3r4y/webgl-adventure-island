@@ -60,7 +60,6 @@ var vehiclePositions = [[10, 0.5, -8]];
 var pyramidNode;
 var billboard;
 var rockNode;
-var rockShaderNode;
 
 const rock  = {
   pos: {
@@ -69,8 +68,6 @@ const rock  = {
     z: 4
   }
 }
-
-var islandPlane;
 
 var animationTime = 0;
 var animateRock = true;
@@ -267,14 +264,14 @@ function createSceneGraph(gl, resources) {
     //  ])
     ]);
   root.append(vehicleNode);
+  root.append(spotLight);
 
-  islandPlane = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [ new MaterialSGNode([ new FilterTextureSGNode(resources.tex_grass, 0.2, [ new RenderSGNode(resources.island_plane) ]) ]) ]);
+  let islandPlane = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [ new MaterialSGNode([ new FilterTextureSGNode(resources.tex_grass, 0.2, [ new RenderSGNode(resources.island_plane) ]) ]) ]);
   islandPlane.ambient = [0, 0.3, 0, 1];
   islandPlane.diffuse = [0.52, 0.86, 0.12, 1];
   islandPlane.specular = [0.1, 0.2, 0.15, 0.];
   islandPlane.shininess = 1.0;
   islandPlane.append(mainLight1);
-//  islandPlane.append(new TransformationSGNode(glm.transform({ translate: [vehicleData.isPos.x,vehicleData.isPos.y,vehicleData.isPos.z], rotateX : vehicleData.rotation.x, rotateZ: vehicleData.rotation.z, rotateY:  vehicleData.rotation.y }),  [spotLight]));
   islandPlane.append(spotLight);
   let rotateIslandPlane = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({ translate: [0,0,0], scale: 1.0 }), [ islandPlane ]) ]);
   root.append(rotateIslandPlane);
@@ -305,9 +302,8 @@ function createSceneGraph(gl, resources) {
   let billboard = new TransformationSGNode(glm.transform({ translate: [2, 1, 8], scale: 0.75, rotateX : -90, rotateZ : -90 }),  [new ShaderSGNode(createProgram(gl, resources.vs_billboard, resources.fs_tex), [new MaterialSGNode([new FilterTextureSGNode(resources.tex_tree, 1.0, [new RenderSGNode(makeBillboard())])])])]);
   root.append(billboard);
 
-  rockShaderNode = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [ new TransformationSGNode(glm.transform({ translate: [rock.pos.x, rock.pos.y, rock.pos.z], scale: 0.75, rotateY : 90, rotateZ : 0 }), [new MaterialSGNode([new FilterTextureSGNode(resources.tex_rock, 0.2, [new RenderSGNode(resources.rock)])])])]);
+  let rockShaderNode = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [ new TransformationSGNode(glm.transform({ translate: [rock.pos.x, rock.pos.y, rock.pos.z], scale: 0.75, rotateY : 90, rotateZ : 0 }), [new MaterialSGNode([new FilterTextureSGNode(resources.tex_rock, 0.2, [new RenderSGNode(resources.rock)])])])]);
   rockShaderNode.append(spotLight);
-//  rockShaderNode.append(mainLight1);
   rockNode = new TransformationSGNode(mat4.create(),  [rockShaderNode]);
   root.append(rockNode);
   let crab = new MaterialSGNode([new RenderSGNode(resources.crab)]);
@@ -367,14 +363,11 @@ function makeSpotLight(gl, resources, x, y, z)
   spotLight.position = [0,0,0];
   setSpotLightDirection();
 
-  let rotateLight = new TransformationSGNode(mat4.create());
   let translateLight = new TransformationSGNode(glm.translate(x,y,z)); //translating the light is the same as setting the light position
 
-  rotateLight.append(translateLight);
-//  translateLight.append(spotLight);
   translateLight.append(createLightSphere());
 
-  return rotateLight;
+  return translateLight;
 }
 
 function setSpotLightDirection(){
@@ -471,9 +464,13 @@ function render(timeInMilliseconds) {
           spotLight.ambient = [0.1, 0.1, 0.1, 1];
           spotLight.diffuse = [1, 1, 1, 1];
           spotLight.specular = [1, 1, 1, 1];
+          vehicleData.animation = false;
         }
         break;
       case 2:
+        if(timeInMilliseconds - lastStateTime > 500){
+          vehicleData.animation = true;
+        }
         if(vehicleDone){
           state++;
           lastStateTime = timeInMilliseconds;
@@ -532,11 +529,9 @@ function render(timeInMilliseconds) {
       animateCrystal = false;
     }
   }
-  vehicleData.rotation.z = timeInMilliseconds*-0.1;
+  //vehicleData.rotation.z = timeInMilliseconds*-0.1;
   vehicleNode.matrix = glm.transform({ translate: [vehicleData.isPos.x,vehicleData.isPos.y,vehicleData.isPos.z], rotateZ : vehicleData.rotation.z, rotateX: vehicleData.rotation.x, rotateY: vehicleData.rotation.y  });
-  spotLight.position[vehicleData.isPos.x, vehicleData.isPos.y, vehicleData.isPos.z];
-//  rockShaderNode.matrix = glm.transform({ translate: [vehicleData.isPos.x,vehicleData.isPos.y,vehicleData.isPos.z], rotateZ : vehicleData.rotation.z, rotateX: vehicleData.rotation.x, rotateY: vehicleData.rotation.y  });
-//  islandPlane.matrix = glm.transform({ translate: [vehicleData.isPos.x,vehicleData.isPos.y,vehicleData.isPos.z], rotateZ : vehicleData.rotation.z, rotateX: vehicleData.rotation.x, rotateY: vehicleData.rotation.y  });
+  spotLight.position = [vehicleData.isPos.x,vehicleData.isPos.y,vehicleData.isPos.z];
   setSpotLightDirection();
   //get inverse view matrix to allow computing eye-to-light matrix
   context.invViewMatrix = mat4.invert(mat4.create(), context.viewMatrix);
