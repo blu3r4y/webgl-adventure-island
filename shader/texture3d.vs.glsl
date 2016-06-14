@@ -10,11 +10,15 @@ uniform mat4 u_projection;
 uniform mat4 u_invView;
 
 uniform vec3 u_lightPos;
+uniform vec3 u_lightSpotPos;
+uniform vec3 u_lightSpotDir;
 
 // output of this shader
 varying vec3 v_normalVec;
 varying vec3 v_eyeVec;
 varying vec3 v_lightVec;
+varying vec3 v_lightSpotVec;
+varying vec3 v_lightSpotDir;
 
 varying vec2 v_texCoord;
 
@@ -27,6 +31,8 @@ void main()
     v_normalVec = u_normalMatrix * a_normal;
     v_eyeVec = -eyePosition.xyz;
     v_lightVec = u_lightPos - eyePosition.xyz;
+    v_lightSpotVec = u_lightSpotPos - eyePosition.xyz;
+    v_lightSpotDir = u_lightSpotDir;
 
     // basic projection
     v_texCoord = a_position.xz * u_scale;
