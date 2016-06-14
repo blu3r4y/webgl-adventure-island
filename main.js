@@ -35,6 +35,7 @@ var lookAtZ = 40;
 var root = null;
 var rootWaterRender = null;
 var waterRoot = null;
+var transparentRoot = null;
 var vehicleNode;
 var pyramidNode;
 var billboard;
@@ -86,21 +87,21 @@ var refractionFrameBuf;
 var frameBufferWidth = 256;
 var frameBufferHeight = 256;
 
-var waterResolution = 4.0;
+const waterResolution = 4.0;
 
 var reflectionColorTex;
-var reflectionColorTexUnit = 20;
+const reflectionColorTexUnit = 3;
 var reflectionDepthBuf;
 
 var refractionColorTex;
-var refractionColorTexUnit = 21;
+const refractionColorTexUnit = 4;
 var refractionDepthTex;
-var refractionDepthTexUnit = 22;
+const refractionDepthTexUnit = 5;
 
 var islandPlaneFilter = null;
 var islandBodyFilter = null;
 
-var waterHeight = -1;
+const waterHeight = -1;
 
 var waterShaderNode;
 
@@ -167,6 +168,7 @@ function init(resources) {
   rootWaterRender = new ShaderSGNode(createProgram(gl, resources.vs_phong, resources.fs_phong));
   root = createSceneGraph(gl, resources);
   waterRoot = createWaterNode(gl, resources);
+  transparentRoot = createTransparentNodes(gl,  resources);
 
   initInteraction(gl.canvas);
 }
@@ -338,6 +340,11 @@ function createWaterNode(gl, resources)
 
 }
 
+function createTransparentNodes(gl, resources) {
+
+  return new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({ translate: [2, 1.5, 8], scale: 0.75, rotateX : -90, rotateZ : -90 }),  [new ShaderSGNode(createProgram(gl, resources.vs_billboard, resources.fs_tex), [new MaterialSGNode([new FilterTextureSGNode(resources.tex_tree, 1.0, [new RenderSGNode(makeBillboard(2.0, 2.0))])])])])]);
+}
+
 function createSceneGraph(gl, resources) {
 
   // phong shader as root
@@ -391,10 +398,6 @@ function createSceneGraph(gl, resources) {
   // coordinate cross for debugging
   let coordinateCross = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({translate: [0, 0, 0], scale: 0.05}), [ new ShaderSGNode(createProgram(gl, resources.vs_cross, resources.fs_cross), [ new RenderSGNode(resources.cross) ]) ]) ]);
   root.append(coordinateCross);
-
-  // tex_tree billboard
-  let billboard = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({ translate: [2, 1, 8], scale: 0.75, rotateX : -90, rotateZ : -90 }),  [new ShaderSGNode(createProgram(gl, resources.vs_billboard, resources.fs_tex), [new MaterialSGNode([new FilterTextureSGNode(resources.tex_tree, 1.0, [new RenderSGNode(makeBillboard())])])])])]);
-  root.append(billboard);
 
   vehicleNode = new TransformationSGNode(mat4.create(), [
       new TransformationSGNode(glm.transform({ translate: [8,0.5,4], scale: 0.5, rotateX : 270, rotateZ : 110 }),  [
@@ -489,9 +492,7 @@ function makePyramid() {
   };
 }
 
-function makeBillboard() {
-  var width = 1;
-  var height = 1;
+function makeBillboard(width, height) {
   var position = [-width, -height, 0,    width,  -height, 0,    width,  height,0,   -width, height, 0, ];
   var normal = [0, 0, 1,   0, 0, 1,   0, 0, 1,   0, 0, 1];
   var texturecoordinates = [0, 0,   1, 0,   1, 1,   0, 1];
@@ -565,10 +566,13 @@ function render(timeInMilliseconds) {
 
   //setup viewport
   gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-  gl.clearColor(0.9, 0.9, 0.9, 1.0);
+  gl.clearColor(0.0, 1.0, 0.0, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   gl.enable(gl.BLEND);
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  //gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  //gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  // https://limnu.com/webgl-blending-youre-probably-wrong/
+  gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
   //setup context and camera matrices
   const context = createSGContext(gl);
@@ -584,8 +588,9 @@ function render(timeInMilliseconds) {
   context.invViewMatrix = mat4.invert(mat4.create(), context.viewMatrix);
 
   //render scenegraph
-  root.render(context);
   waterRoot.render(context);
+  root.render(context);
+  transparentRoot.render(context);
 
   // we rendered a frame
   measureFps();
