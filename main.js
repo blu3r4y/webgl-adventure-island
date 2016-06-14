@@ -44,13 +44,14 @@ const vehicleData = {
   rotation: {
     x: 90,
     y: 180,
-    z: 110
+    z: 0
   }
 }
 
 var pyramidNode;
 var billboard;
 var rockNode;
+var rockShaderNode;
 
 const rock  = {
   pos: {
@@ -59,6 +60,8 @@ const rock  = {
     z: 4
   }
 }
+
+var islandPlane;
 
 var animationTime = 0;
 var animateRock = true;
@@ -254,7 +257,7 @@ function createSceneGraph(gl, resources) {
     ]);
   root.append(vehicleNode);
 
-  let islandPlane = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [ new MaterialSGNode([ new FilterTextureSGNode(resources.tex_grass, 0.2, [ new RenderSGNode(resources.island_plane) ]) ]) ]);
+  islandPlane = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [ new MaterialSGNode([ new FilterTextureSGNode(resources.tex_grass, 0.2, [ new RenderSGNode(resources.island_plane) ]) ]) ]);
   islandPlane.ambient = [0, 0.3, 0, 1];
   islandPlane.diffuse = [0.52, 0.86, 0.12, 1];
   islandPlane.specular = [0.1, 0.2, 0.15, 0.];
@@ -290,7 +293,7 @@ function createSceneGraph(gl, resources) {
   let billboard = new TransformationSGNode(glm.transform({ translate: [2, 1, 8], scale: 0.75, rotateX : -90, rotateZ : -90 }),  [new ShaderSGNode(createProgram(gl, resources.vs_billboard, resources.fs_tex), [new MaterialSGNode([new FilterTextureSGNode(resources.tex_tree, 1.0, [new RenderSGNode(makeBillboard())])])])]);
   root.append(billboard);
 
-  let rockShaderNode = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [ new TransformationSGNode(glm.transform({ translate: [rock.pos.x, rock.pos.y, rock.pos.z], scale: 0.75, rotateY : 90, rotateZ : 0 }), [new MaterialSGNode([new FilterTextureSGNode(resources.tex_rock, 0.2, [new RenderSGNode(resources.rock)])])])]);
+  rockShaderNode = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [ new TransformationSGNode(glm.transform({ translate: [rock.pos.x, rock.pos.y, rock.pos.z], scale: 0.75, rotateY : 90, rotateZ : 0 }), [new MaterialSGNode([new FilterTextureSGNode(resources.tex_rock, 0.2, [new RenderSGNode(resources.rock)])])])]);
   rockShaderNode.append(new TransformationSGNode(glm.transform({ translate: [vehicleData.pos.x,vehicleData.pos.y,vehicleData.pos.z], rotateX : vehicleData.rotation.x, rotateZ: vehicleData.rotation.z, rotateY:  vehicleData.rotation.y }),  [spotLight]));
 //  rockShaderNode.append(mainLight1);
   rockNode = new TransformationSGNode(mat4.create(),  [rockShaderNode]);
@@ -350,7 +353,7 @@ function makeSpotLight(gl, resources, x, y, z)
   spotLight.diffuse = [1, 1, 1, 1];
   spotLight.specular = [1, 1, 1, 1];
   spotLight.position = [0,0,0];
-  spotLight.direction = [Math.sin(deg2rad(camera.sollRotation.x)), 0, Math.cos(deg2rad(camera.sollRotation.x))];
+  setSpotLightDirection();
 
   let rotateLight = new TransformationSGNode(mat4.create());
   let translateLight = new TransformationSGNode(glm.translate(x,y,z)); //translating the light is the same as setting the light position
@@ -360,6 +363,10 @@ function makeSpotLight(gl, resources, x, y, z)
   translateLight.append(createLightSphere());
 
   return rotateLight;
+}
+
+function setSpotLightDirection(){
+  spotLight.direction = [-Math.sin(deg2rad(camera.sollRotation.x + vehicleData.rotation.z - 180)), 0, Math.cos(deg2rad(camera.sollRotation.x + vehicleData.rotation.z - 180))];
 }
 
 function makeVehicle() {
@@ -465,6 +472,11 @@ function render(timeInMilliseconds) {
       animateCrystal = false;
     }
   }
+  vehicleData.rotation.z = timeInMilliseconds*-0.1;
+  vehicleNode.matrix = glm.transform({ translate: [vehicleData.pos.x,vehicleData.pos.y,vehicleData.pos.z], rotateZ : vehicleData.rotation.z, rotateX: vehicleData.rotation.x, rotateY: vehicleData.rotation.y  });
+  rockShaderNode.matrix = glm.transform({ translate: [vehicleData.pos.x,vehicleData.pos.y,vehicleData.pos.z], rotateZ : vehicleData.rotation.z, rotateX: vehicleData.rotation.x, rotateY: vehicleData.rotation.y  });
+  islandPlane.matrix = glm.transform({ translate: [vehicleData.pos.x,vehicleData.pos.y,vehicleData.pos.z], rotateZ : vehicleData.rotation.z, rotateX: vehicleData.rotation.x, rotateY: vehicleData.rotation.y  });
+  setSpotLightDirection();
   //get inverse view matrix to allow computing eye-to-light matrix
   context.invViewMatrix = mat4.invert(mat4.create(), context.viewMatrix);
 
@@ -583,7 +595,7 @@ function initInteraction(canvas) {
     if (mouse.leftButtonDown) {
       //add the relative movement of the mouse to the sollRotation variables
   		camera.sollRotation.x = getDegrees(camera.sollRotation.x - delta.x);
-      spotLight.direction = [Math.sin(deg2rad(camera.sollRotation.x)), 0, Math.cos(deg2rad(camera.sollRotation.x))];
+      setSpotLightDirection();
       let ang = getDegrees(camera.sollRotation.y - delta.y);
       if(ang > 100 && ang < 260)
       {
