@@ -33,7 +33,6 @@ var lookAtZ = 40;
 
 //scene graph nodes
 var root = null;
-var rootWaterRender = null;
 var waterRoot = null;
 var transparentRoot = null;
 var vehicleNode;
@@ -206,7 +205,6 @@ function init(resources) {
   gl.enable(gl.DEPTH_TEST);
 
   //create scenegraph
-  rootWaterRender = new ShaderSGNode(createProgram(gl, resources.vs_phong, resources.fs_phong));
   root = createSceneGraph(gl, resources);
   waterRoot = createWaterNode(gl, resources);
   transparentRoot = createTransparentNodes(gl,  resources);
@@ -228,12 +226,12 @@ function initCubeMap(resources) {
   gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
   gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
   //set correct image for each side of the cube map
-  gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_day_pos_x);
-  gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_day_neg_x);
-  gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_day_pos_y);
-  gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_day_neg_y);
-  gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_day_pos_z);
-  gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_day_neg_z);
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_night_pos_x);
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_night_neg_x);
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_night_pos_y);
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_night_neg_y);
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_night_pos_z);
+  gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_night_neg_z);
   //generate mipmaps (optional)
   gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
   // enable anisotropic filtering
@@ -243,7 +241,7 @@ function initCubeMap(resources) {
   //unbind the texture again
   gl.bindTexture(gl.TEXTURE_CUBE_MAP, null);
 
-  activeCubeMap = 0;
+  activeCubeMap = 1;
 }
 
 
@@ -434,7 +432,6 @@ function createSceneGraph(gl, resources) {
   islandPlane.append(spotLight);
   let rotateIslandPlane = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({ translate: [0,0,0], scale: 1.0 }), [ islandPlane ]) ]);
   root.append(rotateIslandPlane);
-  rootWaterRender.append(islandPlane);
 
   // lower part of the island
   islandBodyFilter = new FilterTextureSGNode(resources.tex_dry, 0.05, [ new RenderSGNode(resources.island_body) ]);
@@ -446,15 +443,10 @@ function createSceneGraph(gl, resources) {
   islandBody.append(mainLight2);
   let rotateIslandBody = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({ translate: [0,0,0], scale: 1.0 }), [ islandBody ]) ]);
   root.append(rotateIslandBody);
-  rootWaterRender.append(rotateIslandBody);
 
   // coordinate cross for debugging
   let coordinateCross = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({translate: [0, 0, 0], scale: 0.05}), [ new ShaderSGNode(createProgram(gl, resources.vs_cross, resources.fs_cross), [ new RenderSGNode(resources.cross) ]) ]) ]);
   root.append(coordinateCross);
-
-  // tex_tree billboard
-  let billboard = new TransformationSGNode(glm.transform({ translate: [2, 1, 12], scale: 0.75, rotateX : -90, rotateZ : -90 }),  [new ShaderSGNode(createProgram(gl, resources.vs_billboard, resources.fs_tex), [new MaterialSGNode([new FilterTextureSGNode(resources.tex_tree, 1.0, [new RenderSGNode(makeBillboard(2.0, 2.0))])])])]);
-  root.append(billboard);
 
   let rockShaderNode = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [ new TransformationSGNode(glm.transform({ translate: [rock.pos.x, rock.pos.y, rock.pos.z], scale: 1, rotateY : 0, rotateZ : 0 }), [new MaterialSGNode([new FilterTextureSGNode(resources.tex_rock, 0.2, [new RenderSGNode(resources.rock)])])])]);
   rockShaderNode.append(spotLight);
@@ -506,17 +498,9 @@ function makeLight(gl, resources, x, y, z)
 
   let light = new LightSGNode();
   light.ambient = [0.1, 0.1, 0.1, 1];
-  light.diffuse = [0, 0, 0, 1];
+  light.diffuse = [0.15, 0.15, 0.15, 1];
   light.specular = [0, 0, 0, 1];
   light.position = [0, 0, 0];
-  
-  /* OLD
-
-   light.ambient = [0.2, 0.2, 0.2, 1];
-   light.diffuse = [0.8, 0.8, 0.8, 1];
-   light.specular = [1, 1, 1, 1];
-   
-   */
 
   let rotateLight = new TransformationSGNode(mat4.create());
   let translateLight = new TransformationSGNode(glm.translate(x,y,z)); //translating the light is the same as setting the light position
@@ -598,38 +582,6 @@ function render(timeInMilliseconds) {
   //Note: We have to update all animations before generating the shadow map!
   //vehicleNode.matrix = glm.rotateY(timeInMilliseconds*-0.01);
   //rotateLight.matrix = glm.rotateY(timeInMilliseconds*0.05);
-
-  // rotate lower light just for fun
-  mainLight2.matrix = glm.rotateY(timeInMilliseconds*0.2);
-
-  // animate water
-  waterShaderNode.waveOffset += 0.0002;
-  waterShaderNode.waveOffset %= 1.0;
-  // set camera pos for water fresel effect
-  waterShaderNode.camera = [camera.istPos.x, camera.istPos.y, camera.istPos.z];
-
-  //Animate pyramid always
-  pyramidNode.matrix = glm.rotateZ(timeInMilliseconds*-0.01);
-  // Animate rock every 100 ms
-  if(animateRock && ((timeInMilliseconds - animationTime) > 100)){
-    //Alternate between 0 and 1
-    rock.pos.y = (rock.pos.y+1)&1;
-    rockNode.matrix = glm.transform({ translate: [0, rock.pos.y*0.1, 0]});
-    animationTime = timeInMilliseconds;
-  }
-  if(animateCrab){
-    crabNode.matrix = glm.rotateY(90 + (timeInMilliseconds-animationCrabStart)*-rotationFactor);
-  }
-  if(animateCrystal){
-    crystalNode.matrix = glm.transform({translate: [0, crystalData.pos.y++, 0], rotateY: 270+timeInMilliseconds*-rotationFactor});
-    if(crystalData.pos.y > 10/0.025){
-      animateCrystal = false;
-    }
-  }
-  //vehicleData.rotation.z = timeInMilliseconds*-rotationFactor;
-  vehicleNode.matrix = glm.transform({ translate: [vehicleData.isPos.x,vehicleData.isPos.y,vehicleData.isPos.z], rotateZ : vehicleData.rotation.z, rotateX: vehicleData.rotation.x, rotateY: vehicleData.rotation.y  });
-  spotLight.position = [vehicleData.isPos.x,vehicleData.isPos.y,vehicleData.isPos.z];
-  setSpotLightDirection();
 
   var vehicleDone;
   let rotationFactor = 0.1;
@@ -773,6 +725,38 @@ function render(timeInMilliseconds) {
       animateCrystal = true;
     }
   }
+
+  // rotate lower light just for fun
+  mainLight2.matrix = glm.rotateY(timeInMilliseconds*0.2);
+
+  // animate water
+  waterShaderNode.waveOffset += 0.0002;
+  waterShaderNode.waveOffset %= 1.0;
+  // set camera pos for water fresel effect
+  waterShaderNode.camera = [camera.istPos.x, camera.istPos.y, camera.istPos.z];
+
+  //Animate pyramid always
+  pyramidNode.matrix = glm.rotateZ(timeInMilliseconds*-0.01);
+  // Animate rock every 100 ms
+  if(animateRock && ((timeInMilliseconds - animationTime) > 100)){
+    //Alternate between 0 and 1
+    rock.pos.y = (rock.pos.y+1)&1;
+    rockNode.matrix = glm.transform({ translate: [0, rock.pos.y*0.1, 0]});
+    animationTime = timeInMilliseconds;
+  }
+  if(animateCrab){
+    crabNode.matrix = glm.rotateY(90 + (timeInMilliseconds-animationCrabStart)*-rotationFactor);
+  }
+  if(animateCrystal){
+    crystalNode.matrix = glm.transform({translate: [0, crystalData.pos.y++, 0], rotateY: 270+timeInMilliseconds*-rotationFactor});
+    if(crystalData.pos.y > 10/0.025){
+      animateCrystal = false;
+    }
+  }
+  //vehicleData.rotation.z = timeInMilliseconds*-rotationFactor;
+  vehicleNode.matrix = glm.transform({ translate: [vehicleData.isPos.x,vehicleData.isPos.y,vehicleData.isPos.z], rotateZ : vehicleData.rotation.z, rotateX: vehicleData.rotation.x, rotateY: vehicleData.rotation.y  });
+  spotLight.position = [vehicleData.isPos.x,vehicleData.isPos.y,vehicleData.isPos.z];
+  setSpotLightDirection();
   
   // UPDATE ANIMATIONS END
   // CONTROL CAMERA AND INPUT START
