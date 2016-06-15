@@ -2,89 +2,87 @@
 // furthermore for texture3d shaders you can supply a scale factor which defines how the texture should be scaled onto the object
 
 class FilterTextureSGNode extends SGNode {
-    constructor(image, scale, children ) {
-        super(children);
-        this.image = image;
-        this.textureunit = 0;
-        this.uniform = 'u_tex';
-        this.textureId = -1;
-        this.scale = scale || 1.0;
-        this.enableClipping = 0;
-        this.clipPlane = vec2.fromValues(1.0, -1.0);
-    }
+	constructor(image, scale, children) {
+		super(children);
+		this.image = image;
+		this.textureunit = 0;
+		this.uniform = 'u_tex';
+		this.textureId = -1;
+		this.scale = scale || 1.0;
+		this.enableClipping = 0;
+		this.clipPlane = vec2.fromValues(1.0, -1.0);
+	}
 
-    init(gl) {
-        
-        this.textureId = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, this.textureId);
+	init(gl) {
 
-        // enable mipmaps
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, this.magFilter || gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, this.minFilter || gl.LINEAR_MIPMAP_LINEAR);
+		this.textureId = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, this.textureId);
 
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, this.wrapS || gl.REPEAT);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, this.wrapT || gl.REPEAT);
+		// enable mipmaps
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, this.magFilter || gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, this.minFilter || gl.LINEAR_MIPMAP_LINEAR);
 
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.image);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, this.wrapS || gl.REPEAT);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, this.wrapT || gl.REPEAT);
 
-        // mipmap needed for mimap filter
-        gl.generateMipmap(gl.TEXTURE_2D);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this.image);
 
-        // enable anisotropic filtering
-        var ext = gl.getExtension("WEBKIT_EXT_texture_filter_anisotropic");
-        var max_anisotropy = gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT);
-        gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, max_anisotropy);
+		// mipmap needed for mimap filter
+		gl.generateMipmap(gl.TEXTURE_2D);
 
-        gl.bindTexture(gl.TEXTURE_2D, null);
-    }
+		// enable anisotropic filtering
+		var ext = gl.getExtension("WEBKIT_EXT_texture_filter_anisotropic");
+		var max_anisotropy = gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT);
+		gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, max_anisotropy);
 
-    render(context) {
-        if (this.textureId < 0) {
-            this.init(context.gl);
-        }
+		gl.bindTexture(gl.TEXTURE_2D, null);
+	}
 
-        gl.uniform1f(gl.getUniformLocation(context.shader, "u_scale"), this.scale);
-        gl.uniform1i(gl.getUniformLocation(context.shader, "u_enableClipPlane"), this.enableClipping);
-        gl.uniform2f(gl.getUniformLocation(context.shader, "u_simpleClipPlane"), this.clipPlane[0], this.clipPlane[1]);
+	render(context) {
+		if (this.textureId < 0) {
+			this.init(context.gl);
+		}
 
-        //set additional shader parameters
-        gl.uniform1i(gl.getUniformLocation(context.shader, this.uniform), this.textureunit);
+		gl.uniform1f(gl.getUniformLocation(context.shader, "u_scale"), this.scale);
+		gl.uniform1i(gl.getUniformLocation(context.shader, "u_enableClipPlane"), this.enableClipping);
+		gl.uniform2f(gl.getUniformLocation(context.shader, "u_simpleClipPlane"), this.clipPlane[0], this.clipPlane[1]);
 
-        //activate and bind texture
-        gl.activeTexture(gl.TEXTURE0 + this.textureunit);
-        gl.bindTexture(gl.TEXTURE_2D, this.textureId);
+		//set additional shader parameters
+		gl.uniform1i(gl.getUniformLocation(context.shader, this.uniform), this.textureunit);
 
-
-        // used for antistropic filtering
-        /*var textureSizeLocation = gl.getUniformLocation(context.shader, "u_textureSize");
-
-        gl.uniform2f(textureSizeLocation, this.image.width, this.image.height);
-
-        var kernelLocation = gl.getUniformLocation(context.shader, "u_kernel[0]");
-        var kernelWeightLocation = gl.getUniformLocation(context.shader, "u_kernelWeight");
-
-        function computeKernelWeight(kernel) {
-            var weight = kernel.reduce(function(prev, curr) {
-                return prev + curr;
-            });
-            return weight <= 0 ? 1 : weight;
-        }
-
-        var gaussianBlur = [
-            0.045, 0.122, 0.045,
-            0.122, 0.332, 0.122,
-            0.045, 0.122, 0.045
-        ];
-        gl.uniform1fv(kernelLocation, gaussianBlur);
-        gl.uniform1f(kernelWeightLocation, computeKernelWeight(gaussianBlur));*/
-
-        //render children
-        super.render(context);
-
-        //clean up
-        gl.activeTexture(gl.TEXTURE0 + this.textureunit);
-        gl.bindTexture(gl.TEXTURE_2D, null);
-    }
+		//activate and bind texture
+		gl.activeTexture(gl.TEXTURE0 + this.textureunit);
+		gl.bindTexture(gl.TEXTURE_2D, this.textureId);
 
 
+		// used for antistropic filtering
+		/*var textureSizeLocation = gl.getUniformLocation(context.shader, "u_textureSize");
+
+		 gl.uniform2f(textureSizeLocation, this.image.width, this.image.height);
+
+		 var kernelLocation = gl.getUniformLocation(context.shader, "u_kernel[0]");
+		 var kernelWeightLocation = gl.getUniformLocation(context.shader, "u_kernelWeight");
+
+		 function computeKernelWeight(kernel) {
+		 var weight = kernel.reduce(function(prev, curr) {
+		 return prev + curr;
+		 });
+		 return weight <= 0 ? 1 : weight;
+		 }
+
+		 var gaussianBlur = [
+		 0.045, 0.122, 0.045,
+		 0.122, 0.332, 0.122,
+		 0.045, 0.122, 0.045
+		 ];
+		 gl.uniform1fv(kernelLocation, gaussianBlur);
+		 gl.uniform1f(kernelWeightLocation, computeKernelWeight(gaussianBlur));*/
+
+		//render children
+		super.render(context);
+
+		//clean up
+		gl.activeTexture(gl.TEXTURE0 + this.textureunit);
+		gl.bindTexture(gl.TEXTURE_2D, null);
+	}
 }

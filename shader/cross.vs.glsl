@@ -62,7 +62,7 @@ vec4 calculateSimplePointLight(Light light, Material material, vec3 lightVec, ve
 	float diffuse = max(dot(normalVec,lightVec),0.0);
 
 	vec3 reflectVec = reflect(-lightVec,normalVec);
-    float spec = pow( max( dot(reflectVec, eyeVec), 0.0) , material.shininess);
+	float spec = pow( max( dot(reflectVec, eyeVec), 0.0) , material.shininess);
 
 	vec4 c_amb  = clamp(light.ambient * material.ambient, 0.0, 1.0);
 	vec4 c_diff = clamp(diffuse * light.diffuse * material.diffuse, 0.0, 1.0);
@@ -74,19 +74,19 @@ vec4 calculateSimplePointLight(Light light, Material material, vec3 lightVec, ve
 
 void main()
 {
-    vec4 eyePosition = u_modelView * vec4(a_position,1);
-    vec3 normalVec = u_normalMatrix * a_normal;
-    vec3 eyeVec = -eyePosition.xyz;
-    vec3 lightVec = vec3(0, 0, 0) - eyePosition.xyz;
+	vec4 eyePosition = u_modelView * vec4(a_position,1);
+	vec3 normalVec = u_normalMatrix * a_normal;
+	vec3 eyeVec = -eyePosition.xyz;
+	vec3 lightVec = vec3(0, 0, 0) - eyePosition.xyz;
 
-    Material material = neutral;
+	Material material = neutral;
 
-    if (a_position.y > 2.) material = green;
-    else if (a_position.x > 2.) material = blue;
-    else if (a_position.z > 2.) material = red;
-    else material = neutral;
+	if (a_position.y > 2.) material = green;
+	else if (a_position.x > 2.) material = blue;
+	else if (a_position.z > 2.) material = red;
+	else material = neutral;
 
-    v_color = calculateSimplePointLight(light, material, lightVec, normalVec, eyeVec);
+	v_color = calculateSimplePointLight(light, material, lightVec, normalVec, eyeVec);
 
-    gl_Position = u_projection * eyePosition;
+	gl_Position = u_projection * eyePosition;
 }

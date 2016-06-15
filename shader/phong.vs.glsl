@@ -23,12 +23,12 @@ varying float v_isInLight;
 
 void main()
 {
-    vec4 eyePosition = u_modelView * vec4(a_position, 1);
-    v_normalVec = u_normalMatrix * a_normal;
-    v_eyeVec = -eyePosition.xyz;
-    v_lightVec = u_lightPos - eyePosition.xyz;
-    v_lightSpotVec = u_lightSpotPos - eyePosition.xyz;
-    v_lightSpotDir = u_lightSpotDir;
+	vec4 eyePosition = u_modelView * vec4(a_position, 1);
+	v_normalVec = u_normalMatrix * a_normal;
+	v_eyeVec = -eyePosition.xyz;
+	v_lightVec = u_lightPos - eyePosition.xyz;
+	v_lightSpotVec = u_lightSpotPos - eyePosition.xyz;
+	v_lightSpotDir = u_lightSpotDir;
 
-    gl_Position = u_projection * eyePosition;
+	gl_Position = u_projection * eyePosition;
 }

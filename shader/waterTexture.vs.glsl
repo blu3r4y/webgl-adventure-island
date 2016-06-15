@@ -20,17 +20,16 @@ uniform mat3 u_invView;
 
 void main()
 {
+	vec4 eyePosition = u_modelView * vec4(a_position,1);
+	//v_normalVec = u_normalMatrix * a_normal;
+	//v_eyeVec = -eyePosition.xyz;
 
-    vec4 eyePosition = u_modelView * vec4(a_position,1);
-    //v_normalVec = u_normalMatrix * a_normal;
-    //v_eyeVec = -eyePosition.xyz;
+	// basic projection
+	v_texCoord = a_texCoord * 0.5;
 
-    // basic projection
-    v_texCoord = a_texCoord * 0.5;
+	// fresnel effect
+	v_cameraVec = normalize(u_cameraPos - (u_invView * eyePosition.xyz));
 
-    // fresnel effect
-    v_cameraVec = normalize(u_cameraPos - (u_invView * eyePosition.xyz));
-
-    v_clipSpace = u_projection * eyePosition;
-    gl_Position = v_clipSpace;
+	v_clipSpace = u_projection * eyePosition;
+	gl_Position = v_clipSpace;
 }

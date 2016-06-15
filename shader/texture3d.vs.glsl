@@ -29,16 +29,16 @@ varying vec3 v_position;
 
 void main()
 {
-    vec4 eyePosition = u_modelView * vec4(a_position,1);
-    v_position = a_position;
-    v_normalVec = u_normalMatrix * a_normal;
-    v_eyeVec = -eyePosition.xyz;
-    v_lightVec = u_lightPos - eyePosition.xyz;
-    v_lightSpotVec = u_lightSpotPos - eyePosition.xyz;
-    v_lightSpotDir = u_lightSpotDir;
+	vec4 eyePosition = u_modelView * vec4(a_position,1);
+	v_position = a_position;
+	v_normalVec = u_normalMatrix * a_normal;
+	v_eyeVec = -eyePosition.xyz;
+	v_lightVec = u_lightPos - eyePosition.xyz;
+	v_lightSpotVec = u_lightSpotPos - eyePosition.xyz;
+	v_lightSpotDir = u_lightSpotDir;
 
-    // basic projection
-    v_texCoord = a_position.xz * u_scale;
+	// basic projection
+	v_texCoord = a_position.xz * u_scale;
 
-    gl_Position = u_projection * eyePosition;
+	gl_Position = u_projection * eyePosition;
 }

@@ -65,9 +65,9 @@ vec4 calculateSpotPointLight(Light light, Material material, vec3 lightVec, vec3
 
 	float spotCutoffCosine = 0.6;
 
-	if(dot(-lightVec,D) > spotCutoffCosine){
+	if(dot(-lightVec,D) > spotCutoffCosine) {
 		float diffuse = max(dot(normalVec,lightVec),0.0);
-		if(diffuse > 0.0){
+		if(diffuse > 0.0) {
 			res += clamp(diffuse * light.diffuse * material.diffuse, 0.0, 1.0);
 			vec3 reflectVec = reflect(-lightVec,normalVec);
 			float spec = pow( max(dot(reflectVec, eyeVec),0.0) , material.shininess);
@@ -82,5 +82,4 @@ void main()
 {
 	gl_FragColor = calculateSimplePointLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec)
 	+ calculateSpotPointLight(u_lightSpot, u_material, v_lightSpotVec, v_normalVec, v_eyeVec);
-
 }
