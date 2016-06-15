@@ -206,7 +206,14 @@ function init(resources) {
   //create scenegraph
   root = createSceneGraph(gl, resources);
   waterRoot = createWaterNode(gl, resources);
-  transparentRoot = createTransparentNodes(gl,  resources);
+  transparentRoot = new TransformationSGNode(mat4.create());
+  for(var i = 0; i < 3; i++){
+    let billboard =  createTransparentNodes(gl, resources, 6 - i*6, 1.5, 15);
+    billboard.append(spotLight);
+    billboard.append(mainLight1);
+    transparentRoot.append(billboard);
+  }
+
 
   initInteraction(gl.canvas);
 }
@@ -378,9 +385,12 @@ function createWaterNode(gl, resources)
 
 }
 
-function createTransparentNodes(gl, resources) {
+function createTransparentNodes(gl, resources, x, y, z) {
 
-  return new ShaderSGNode(createProgram(gl, resources.vs_billboard, resources.fs_tex), [new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({ translate: [2, 1.5, 15], scale: 0.75, rotateX : 0, rotateZ : 0 }), [new MaterialSGNode([new FilterTextureSGNode(resources.tex_tree, 1.0, [new RenderSGNode(makeBillboard(2.0, 2.0))])])])])]);
+  let materialNode = new MaterialSGNode([new FilterTextureSGNode(resources.tex_tree, 1.0, [new RenderSGNode(makeBillboard(2.0, 2.0))])]);
+  materialNode.specular = [0.1, 0.2, 0.15, 0.];
+  materialNode.shininess = 0.5;
+  return new ShaderSGNode(createProgram(gl, resources.vs_billboard, resources.fs_tex), [new TransformationSGNode(glm.transform({ translate: [x, y, z], scale: 0.75, rotateX : 0, rotateZ : 0 }), [materialNode])]);
 }
 
 function createSceneGraph(gl, resources) {
@@ -447,8 +457,14 @@ function createSceneGraph(gl, resources) {
   let coordinateCross = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({translate: [0, 0, 0], scale: 0.05}), [ new ShaderSGNode(createProgram(gl, resources.vs_cross, resources.fs_cross), [ new RenderSGNode(resources.cross) ]) ]) ]);
   root.append(coordinateCross);
 
-  let rockShaderNode = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [ new TransformationSGNode(glm.transform({ translate: [rock.pos.x, rock.pos.y, rock.pos.z], scale: 1, rotateY : 0, rotateZ : 0 }), [new MaterialSGNode([new FilterTextureSGNode(resources.tex_rock, 0.2, [new RenderSGNode(resources.rock)])])])]);
+  let rockMaterialNode = new MaterialSGNode([new FilterTextureSGNode(resources.tex_rock, 0.2, [new RenderSGNode(resources.rock)])]);
+  rockMaterialNode.ambient = [0, 0.3, 0, 1];
+  rockMaterialNode.diffuse = [0.2, 0.2, 0.2, 1];
+  rockMaterialNode.specular = [0.1, 0.1, 0.1, 0.];
+  rockMaterialNode.shininess = 0.5;
+  let rockShaderNode = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [ new TransformationSGNode(glm.transform({ translate: [rock.pos.x, rock.pos.y, rock.pos.z], scale: 1, rotateY : 0, rotateZ : 0 }), [rockMaterialNode])]);
   rockShaderNode.append(spotLight);
+  rockShaderNode.append(mainLight1);
   rockNode = new TransformationSGNode(mat4.create(),  [rockShaderNode]);
   root.append(rockNode);
   let crab = new MaterialSGNode([new RenderSGNode(resources.crab)]);
