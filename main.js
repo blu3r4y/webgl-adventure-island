@@ -79,7 +79,14 @@ var animationCrabStart;
 
 var crystalNode;
 var animateCrystal = false;
-var crystalY = 0;
+
+const crystalData  = {
+  pos: {
+    x: -2,
+    y: 0,
+    z: 5
+  }
+}
 
 var invertedCamera = false;
 var userControlled = false;
@@ -325,7 +332,7 @@ function createSceneGraph(gl, resources) {
   crystalNode = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({ translate: [0, 0, 2/0.025], rotateX: 90}),  [
         crystal ])
     ]);
-  root.append(new TransformationSGNode(glm.transform({ translate: [-2, 0, 5], scale: 0.025}) , crystalNode));
+  root.append(new TransformationSGNode(glm.transform({ translate: [crystalData.pos.x, crystalData.pos.y, crystalData.pos.z], scale: 0.025}) , crystalNode));
 
   return root;
 }
@@ -531,6 +538,13 @@ function render(timeInMilliseconds) {
           lastStateTime = timeInMilliseconds;
         }
         break;
+      case 9:
+        if(timeInMilliseconds - lastStateTime > 500){
+          followVehicle(7);
+          state++;
+          lastStateTime = timeInMilliseconds;
+        }
+        break;
       default: //We're done with the movie, swith to user mode
         userControlled = true;
         console.log("Time elapsed: " + timeInMilliseconds);
@@ -556,6 +570,12 @@ function render(timeInMilliseconds) {
   if(animateCrab && (timeInMilliseconds - animationCrabStart) > 360/rotationFactor*circles){
     animateCrab = false;
     crabNode.matrix = glm.transform({translate: [-2, 0, 0], rotateY: 90});
+  }
+  //check whether the crystal animation should start
+  if(!animateCrystal && crystalData.pos.y == 0){
+    if(isInsideCircle(crystalData.pos.x, crystalData.pos.z, camera.sollPos.x, camera.sollPos.z, 8)){
+      animateCrystal = true;
+    }
   }
 
   // sample mouse and keyboard input every 10 milliseconds
@@ -598,8 +618,8 @@ function render(timeInMilliseconds) {
     crabNode.matrix = glm.rotateY(90 + (timeInMilliseconds-animationCrabStart)*-rotationFactor);
   }
   if(animateCrystal){
-    crystalNode.matrix = glm.transform({translate: [0, crystalY++, 0], rotateY: timeInMilliseconds*-rotationFactor});
-    if(crystalY > 10/0.025){
+    crystalNode.matrix = glm.transform({translate: [0, crystalData.pos.y++, 0], rotateY: 270+timeInMilliseconds*-rotationFactor});
+    if(crystalData.pos.y > 10/0.025){
       animateCrystal = false;
     }
   }
