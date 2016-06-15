@@ -877,6 +877,7 @@ function renderReflection(timeInMilliseconds)
 
   //render scenegraph
   root.render(contextWater); //scene graph without floor to avoid reading from the same texture as we write to...
+  transparentRoot.render(contextWater);
 
   // disable framebuffer (render to screen again)
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -913,6 +914,7 @@ function renderRefraction(timeInMilliseconds)
 
   //render scenegraph
   root.render(contextWater); //scene graph without floor to avoid reading from the same texture as we write to...
+  transparentRoot.render(contextWater);
 
   // disable framebuffer (render to screen again)
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
