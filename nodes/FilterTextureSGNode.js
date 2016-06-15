@@ -9,9 +9,12 @@ class FilterTextureSGNode extends SGNode {
         this.uniform = 'u_tex';
         this.textureId = -1;
         this.scale = scale || 1.0;
+        this.enableClipping = 0;
+        this.clipPlane = vec2.fromValues(1.0, -1.0);
     }
 
     init(gl) {
+        
         this.textureId = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, this.textureId);
 
@@ -41,6 +44,8 @@ class FilterTextureSGNode extends SGNode {
         }
 
         gl.uniform1f(gl.getUniformLocation(context.shader, "u_scale"), this.scale);
+        gl.uniform1i(gl.getUniformLocation(context.shader, "u_enableClipPlane"), this.enableClipping);
+        gl.uniform2f(gl.getUniformLocation(context.shader, "u_simpleClipPlane"), this.clipPlane[0], this.clipPlane[1]);
 
         //set additional shader parameters
         gl.uniform1i(gl.getUniformLocation(context.shader, this.uniform), this.textureunit);
