@@ -29,6 +29,6 @@ void main() {
 
 	v_texCoord = a_texCoord;
 
-
-	gl_Position =  u_projection * (u_modelView * vec4(0.0,0.0,0.0,1.0) + vec4(a_position.x, a_position.y, 0.0, 0.0));
+	vec4 rotationY = u_modelView[1] * a_position.y;
+	gl_Position =  u_projection * (u_modelView * vec4(0.0,0.0,0.0,1.0) + vec4(a_position.x, 0.0, a_position.z, 0.0) + rotationY);
 }

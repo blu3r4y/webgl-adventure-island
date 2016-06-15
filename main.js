@@ -60,7 +60,6 @@ var nextPos = -1;
 var vehiclePositions = [[10, 0.5, -8], [10, 0.5, 1], [1, 0.5, 5]];
 
 var pyramidNode;
-var billboard;
 var rockNode;
 
 const rock  = {
@@ -154,7 +153,7 @@ loadResources({
   fs_single: 'shader/single.fs.glsl',
   vs_cross: 'shader/cross.vs.glsl',
   fs_cross: 'shader/cross.fs.glsl',
-  vs_billboard: 'shader/texture.vs.glsl',
+  vs_billboard: 'shader/billboard.vs.glsl',
   fs_tex3d: 'shader/texture3d.fs.glsl',
   vs_tex3d: 'shader/texture3d.vs.glsl',
   fs_tex: 'shader/texture.fs.glsl',
@@ -381,7 +380,7 @@ function createWaterNode(gl, resources)
 
 function createTransparentNodes(gl, resources) {
 
-  return new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({ translate: [2, 1.5, 8], scale: 0.75, rotateX : -90, rotateZ : -90 }),  [new ShaderSGNode(createProgram(gl, resources.vs_billboard, resources.fs_tex), [new MaterialSGNode([new FilterTextureSGNode(resources.tex_tree, 1.0, [new RenderSGNode(makeBillboard(2.0, 2.0))])])])])]);
+  return new ShaderSGNode(createProgram(gl, resources.vs_billboard, resources.fs_tex), [new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({ translate: [2, 1.5, 15], scale: 0.75, rotateX : 0, rotateZ : 0 }), [new MaterialSGNode([new FilterTextureSGNode(resources.tex_tree, 1.0, [new RenderSGNode(makeBillboard(2.0, 2.0))])])])])]);
 }
 
 function createSceneGraph(gl, resources) {
@@ -565,7 +564,7 @@ function makePyramid() {
 function makeBillboard(width, height) {
   var position = [-width, -height, 0,    width,  -height, 0,    width,  height,0,   -width, height, 0, ];
   var normal = [0, 0, 1,   0, 0, 1,   0, 0, 1,   0, 0, 1];
-  var texturecoordinates = [0, 0,   1, 0,   1, 1,   0, 1];
+  var texturecoordinates = [1, 1,   0, 1,   0, 0,   1, 0];
   var index = [0, 1, 2,  2, 3, 0];
   return {
     position: position,
@@ -757,7 +756,7 @@ function render(timeInMilliseconds) {
   vehicleNode.matrix = glm.transform({ translate: [vehicleData.isPos.x,vehicleData.isPos.y,vehicleData.isPos.z], rotateZ : vehicleData.rotation.z, rotateX: vehicleData.rotation.x, rotateY: vehicleData.rotation.y  });
   spotLight.position = [vehicleData.isPos.x,vehicleData.isPos.y,vehicleData.isPos.z];
   setSpotLightDirection();
-  
+
   // UPDATE ANIMATIONS END
   // CONTROL CAMERA AND INPUT START
 
