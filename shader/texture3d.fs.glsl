@@ -128,6 +128,7 @@ if (u_enableClipPlane) if (u_simpleClipPlane.x > 0.0 ? v_position.y < u_simpleCl
 */
 
 		vec4 textureColor = texture2D(u_tex, v_texCoord);
-    gl_FragColor = calculateSimplePointLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec, textureColor)
-				+ calculateSpotPointLight(u_lightSpot, u_material, v_lightSpotVec, v_normalVec, v_eyeVec, textureColor);
+		gl_FragColor = calculateSimplePointLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec, textureColor)
+					+ calculateSpotPointLight(u_lightSpot, u_material, v_lightSpotVec, v_normalVec, v_eyeVec, textureColor);
+
 }
