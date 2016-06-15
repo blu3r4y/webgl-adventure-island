@@ -1105,13 +1105,15 @@ function moveDown()
 function moveForward(){
   let zpart = -Math.cos(deg2rad(camera.sollRotation.x));
   let xpart = Math.sin(deg2rad(camera.sollRotation.x));
-  move(zpart, xpart, 0.);
+  let ypart = -Math.sin(deg2rad(camera.sollRotation.y));
+  move(zpart, xpart, ypart);
 }
 
 function moveBackwards(){
   let zpart = Math.cos(deg2rad(camera.sollRotation.x));
   let xpart = -Math.sin(deg2rad(camera.sollRotation.x));
-  move(zpart, xpart, 0.);
+  let ypart = Math.sin(deg2rad(camera.sollRotation.y));
+  move(zpart, xpart, ypart);
 }
 
 function moveRight(){
