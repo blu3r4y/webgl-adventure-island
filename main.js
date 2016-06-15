@@ -55,7 +55,7 @@ const vehicleData = {
 }
 
 var nextPos = -1;
-var vehiclePositions = [[10, 0.5, -8]];
+var vehiclePositions = [[10, 0.5, -8], [10, 0.5, 1], [1, 0.5, 5]];
 
 var pyramidNode;
 var billboard;
@@ -70,13 +70,15 @@ const rock  = {
 }
 
 var animationTime = 0;
-var animateRock = true;
+var animateRock = false;
+var animationRockStart;
 
 var crabNode;
-var animateCrab = true;
+var animateCrab = false;
+var animationCrabStart;
 
 var crystalNode;
-var animateCrystal = true;
+var animateCrystal = false;
 var crystalY = 0;
 
 var invertedCamera = false;
@@ -246,7 +248,7 @@ function createSceneGraph(gl, resources) {
   // main light sources
   root.append(mainLight1);  // upper light
 
-  pyramidNode = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({ translate: [0,0,0.5], scale: 0.5 }),  [ new RenderSGNode(makePyramid())])]);
+  pyramidNode = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({ translate: [0,0,0.5], scale: 1 }),  [ new RenderSGNode(makePyramid())])]);
   let vehicle = new MaterialSGNode([
     new RenderSGNode(makeVehicle()),
     pyramidNode
@@ -299,10 +301,10 @@ function createSceneGraph(gl, resources) {
   root.append(coordinateCross);
 
   // tex_tree billboard
-  let billboard = new TransformationSGNode(glm.transform({ translate: [2, 1, 8], scale: 0.75, rotateX : -90, rotateZ : -90 }),  [new ShaderSGNode(createProgram(gl, resources.vs_billboard, resources.fs_tex), [new MaterialSGNode([new FilterTextureSGNode(resources.tex_tree, 1.0, [new RenderSGNode(makeBillboard())])])])]);
+  let billboard = new TransformationSGNode(glm.transform({ translate: [2, 1, 12], scale: 0.75, rotateX : -90, rotateZ : -90 }),  [new ShaderSGNode(createProgram(gl, resources.vs_billboard, resources.fs_tex), [new MaterialSGNode([new FilterTextureSGNode(resources.tex_tree, 1.0, [new RenderSGNode(makeBillboard())])])])]);
   root.append(billboard);
 
-  let rockShaderNode = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [ new TransformationSGNode(glm.transform({ translate: [rock.pos.x, rock.pos.y, rock.pos.z], scale: 0.75, rotateY : 90, rotateZ : 0 }), [new MaterialSGNode([new FilterTextureSGNode(resources.tex_rock, 0.2, [new RenderSGNode(resources.rock)])])])]);
+  let rockShaderNode = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [ new TransformationSGNode(glm.transform({ translate: [rock.pos.x, rock.pos.y, rock.pos.z], scale: 1, rotateY : 0, rotateZ : 0 }), [new MaterialSGNode([new FilterTextureSGNode(resources.tex_rock, 0.2, [new RenderSGNode(resources.rock)])])])]);
   rockShaderNode.append(spotLight);
   rockNode = new TransformationSGNode(mat4.create(),  [rockShaderNode]);
   root.append(rockNode);
@@ -311,7 +313,7 @@ function createSceneGraph(gl, resources) {
   crab.diffuse = [1, 0.60648, 0.42648, 1];
   crab.specular = [1, 0.555802, 0.666065, 1];
   crab.shininess = 0.5;
-  crabNode = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({ translate: [0, 0, 2], rotateY: 270}),  [
+  crabNode = new TransformationSGNode(glm.transform({ translate: [-2, 0, 0], rotateY: 90}), [ new TransformationSGNode(glm.transform({ translate: [0, 0, 2], rotateY: 270}),  [
         crab ])
     ]);
   root.append(new TransformationSGNode(glm.transform({ translate: [rock.pos.x, 0, rock.pos.z], rotateY: 270}),  [crabNode]));
@@ -323,7 +325,7 @@ function createSceneGraph(gl, resources) {
   crystalNode = new TransformationSGNode(mat4.create(), [ new TransformationSGNode(glm.transform({ translate: [0, 0, 2/0.025], rotateX: 90}),  [
         crystal ])
     ]);
-  root.append(new TransformationSGNode(glm.transform({ translate: [0, 0, 7], scale: 0.025}) , crystalNode));
+  root.append(new TransformationSGNode(glm.transform({ translate: [-2, 0, 5], scale: 0.025}) , crystalNode));
 
   return root;
 }
@@ -427,6 +429,8 @@ function render(timeInMilliseconds) {
   cameraControlLoop();
 
   var vehicleDone;
+  let rotationFactor = 0.1;
+  let circles = 3;
 
   if(vehicleData.animation){
     vehicleDone = vehicleControlLoop();
@@ -437,9 +441,7 @@ function render(timeInMilliseconds) {
         vehicleData.destPos.y = vehiclePositions[nextPos][1];
         vehicleData.destPos.z = vehiclePositions[nextPos][2];
       }
-      else{
-        vehicleData.animation = false;
-      }
+      vehicleData.animation = false;
     }
   }
 
@@ -472,17 +474,89 @@ function render(timeInMilliseconds) {
           vehicleData.animation = true;
         }
         if(vehicleDone){
+          camera.sollPos.x = vehicleData.isPos.x;
           state++;
+          lastStateTime = timeInMilliseconds;
+          vehicleData.animation = false;
+        }
+        break;
+      case 3:
+        if(vehicleData.rotation.z > 180){
+          vehicleData.rotation.z -= 1;
+        }
+        else{
+          state++;
+          lastStateTime = timeInMilliseconds;
+        }
+        break;
+      case 4:
+        vehicleData.animation = true;
+        followVehicle(5);
+        if(vehicleDone){
+          state++;
+          lastStateTime = timeInMilliseconds;
+          vehicleData.animation = false;
+        }
+        break;
+      case 5:
+        if(timeInMilliseconds - lastStateTime > 1500){
+          followVehicle(7);
+          state++;
+          lastStateTime = timeInMilliseconds;
+        }
+        break;
+      case 6:
+        if(timeInMilliseconds - animationCrabStart > 360/rotationFactor*circles){
+          state++;
+        }
+        break;
+      case 7:
+        if(vehicleData.rotation.z > 135){
+          vehicleData.rotation.z -= 1;
+        }
+        else{
+          state++;
+          lastStateTime = timeInMilliseconds;
+          camera.sollRotation.x = 225;
+          camera.sollPos.x = 14.5;
+          camera.sollPos.z = -4.5;
+        }
+        break;
+      case 8:
+        vehicleData.animation = true;
+        followVehicle(5);
+        if(vehicleDone){
+          state++;
+          vehicleData.animation = false;
           lastStateTime = timeInMilliseconds;
         }
         break;
       default: //We're done with the movie, swith to user mode
         userControlled = true;
+        console.log("Time elapsed: " + timeInMilliseconds);
+        console.log("x" + camera.sollPos.x, "y" + camera.sollPos.y, "z" + camera.sollPos.z);
         break;
     }
   }
 
-
+  //check whether camera is close enough to toggle stone animation
+  if(!animateRock && !animateCrab){
+    if(isInsideCircle(rock.pos.x, rock.pos.z, camera.sollPos.x, camera.sollPos.z, 9)){
+      animateRock = true;
+      animationRockStart = timeInMilliseconds;
+    }
+  }
+  //check whether the rock animation should stop and the crab animation should start
+  if(animateRock && ((timeInMilliseconds - animationRockStart) > 1000)){
+    animateRock = false;
+    animateCrab = true;
+    animationCrabStart = timeInMilliseconds;
+  }
+  //check whether the crab animation should stop (after 3 circles))
+  if(animateCrab && (timeInMilliseconds - animationCrabStart) > 360/rotationFactor*circles){
+    animateCrab = false;
+    crabNode.matrix = glm.transform({translate: [-2, 0, 0], rotateY: 90});
+  }
 
   // sample mouse and keyboard input every 10 milliseconds
   if ((timeInMilliseconds - lastSampleTime) > 10) {
@@ -521,15 +595,15 @@ function render(timeInMilliseconds) {
     animationTime = timeInMilliseconds;
   }
   if(animateCrab){
-    crabNode.matrix = glm.rotateY(timeInMilliseconds*-0.1);
+    crabNode.matrix = glm.rotateY(90 + (timeInMilliseconds-animationCrabStart)*-rotationFactor);
   }
   if(animateCrystal){
-    crystalNode.matrix = glm.transform({translate: [0, crystalY++, 0], rotateY: timeInMilliseconds*-0.1});
+    crystalNode.matrix = glm.transform({translate: [0, crystalY++, 0], rotateY: timeInMilliseconds*-rotationFactor});
     if(crystalY > 10/0.025){
       animateCrystal = false;
     }
   }
-  //vehicleData.rotation.z = timeInMilliseconds*-0.1;
+  //vehicleData.rotation.z = timeInMilliseconds*-rotationFactor;
   vehicleNode.matrix = glm.transform({ translate: [vehicleData.isPos.x,vehicleData.isPos.y,vehicleData.isPos.z], rotateZ : vehicleData.rotation.z, rotateX: vehicleData.rotation.x, rotateY: vehicleData.rotation.y  });
   spotLight.position = [vehicleData.isPos.x,vehicleData.isPos.y,vehicleData.isPos.z];
   setSpotLightDirection();
@@ -544,6 +618,22 @@ function render(timeInMilliseconds) {
   measureFps();
 }
 
+//lets the camera follow the vehicle from behind with the given distance
+function followVehicle(distance){
+  let zpart = -Math.cos(deg2rad(camera.sollRotation.x));
+  let xpart = Math.sin(deg2rad(camera.sollRotation.x));
+  camera.sollPos.x = vehicleData.isPos.x - distance*xpart;
+  camera.sollPos.z = vehicleData.isPos.z - distance*zpart;
+}
+
+function isInsideCircle(circleX, circleZ, x, z, radius){
+  let dx = circleX - x;
+  let dz = circleZ - z;
+  let radiusSq = radius * radius;
+  let distSq = dx * dx + dz * dz;
+  return distSq <= radiusSq;
+}
+
 function vehicleControlLoop(){
   let c = 0.05;
 
@@ -554,7 +644,7 @@ function vehicleControlLoop(){
   vehicleData.isPos.x += x;
   vehicleData.isPos.y += y;
   vehicleData.isPos.z += z;
-
+  //console.log("Vehicle: x: " + vehicleData.isPos.x, "z: " + vehicleData.isPos.z);
   return ((x == 0)&&(y == 0)&&(z == 0));
 
 }
@@ -742,7 +832,7 @@ function move(zpart, xpart){
     camera.sollPos.z = lookAtZ + 0.01;
   }
   camera.sollPos.x = camera.sollPos.x + zoom*xpart;
-  //console.log("z :" + camera.sollPos.z, "x :" + camera.sollPos.x);
+  console.log("Camera", "z :" + camera.sollPos.z, "x :" + camera.sollPos.x);
 }
 
 function deg2rad(degrees) {
