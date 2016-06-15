@@ -1,3 +1,5 @@
+// vertex shader for texture mapping onto complex objects with clipping and spotlight ability
+
 attribute vec3 a_position;
 attribute vec3 a_normal;
 
@@ -37,7 +39,7 @@ void main()
 	v_lightSpotVec = u_lightSpotPos - eyePosition.xyz;
 	v_lightSpotDir = u_lightSpotDir;
 
-	// basic projection
+	// scale the texture
 	v_texCoord = a_position.xz * u_scale;
 
 	gl_Position = u_projection * eyePosition;

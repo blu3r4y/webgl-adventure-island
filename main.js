@@ -143,37 +143,42 @@ const waterHeight = -1;
 
 var waterShaderNode;
 
-//load the required resources using a utility function
+// load the resources
 loadResources({
-	vs_gouraud: 'shader/gouraud.vs.glsl',
-	fs_gouraud: 'shader/gouraud.fs.glsl',
+
+	// shader
+	vs_single: 'shader/white.vs.glsl',
+	fs_single: 'shader/white.fs.glsl',
 	vs_phong: 'shader/phong.vs.glsl',
 	fs_phong: 'shader/phong.fs.glsl',
-	vs_single: 'shader/single.vs.glsl',
-	fs_single: 'shader/single.fs.glsl',
 	vs_cross: 'shader/cross.vs.glsl',
 	fs_cross: 'shader/cross.fs.glsl',
 	vs_billboard: 'shader/billboard.vs.glsl',
+	fs_billboard: 'shader/billboard.fs.glsl',
 	fs_tex3d: 'shader/texture3d.fs.glsl',
 	vs_tex3d: 'shader/texture3d.vs.glsl',
-	fs_tex: 'shader/texture.fs.glsl',
-	vs_env: 'shader/envmap.vs.glsl',
-	fs_env: 'shader/envmap.fs.glsl',
-	vs_texSimple: 'shader/simpleTexture.vs.glsl',
-	fs_texSimple: 'shader/simpleTexture.fs.glsl',
-	vs_texWater: 'shader/waterTexture.vs.glsl',
-	fs_texWater: 'shader/waterTexture.fs.glsl',
+	vs_texWater: 'shader/water.vs.glsl',
+	fs_texWater: 'shader/water.fs.glsl',
+	vs_skybox: 'shader/skybox.vs.glsl',
+	fs_skybox: 'shader/skybox.fs.glsl',
+
+	// models
 	island_body: 'models/island/models/island_body.obj',
 	island_plane: 'models/island/models/island_plane.obj',
+	crystal: 'models/crystal/crystal.obj',
+	crab: 'models/crab/crab.obj',
+	rock: 'models/stone/models/stone.obj',
 	cross: 'models/cross.obj',
+
+	// textures
 	tex_tree: 'models/tree.png',
 	tex_grass: 'models/island/texture/grass.jpg',
-	tex_test: 'models/tex_test.jpg',
 	tex_dry: 'models/island/texture/dry.jpg',
-	rock: 'models/stone/models/stone.obj',
 	tex_rock: 'models/stone/texture/texture.jpg',
 	tex_dudv: 'models/water/dudv.jpg',
-	crab: 'models/crab/crab.obj',
+	tex_test: 'models/tex_test.jpg',
+
+	// skybox
 	env_night_pos_x: 'models/skybox/moon_rt_min.jpg',
 	env_night_neg_x: 'models/skybox/moon_lf_min.jpg',
 	env_night_pos_y: 'models/skybox/moon_up_min.jpg',
@@ -185,11 +190,11 @@ loadResources({
 	env_day_pos_y: 'models/skybox/tropical_up_min.jpg',
 	env_day_neg_y: 'models/skybox/tropical_dn_min.jpg',
 	env_day_pos_z: 'models/skybox/tropical_bk_min.jpg',
-	env_day_neg_z: 'models/skybox/tropical_ft_min.jpg',
-	crystal: 'models/crystal/crystal.obj'
-}).then(function (resources /*an object containing our keys with the loaded resources*/) {
-	init(resources);
+	env_day_neg_z: 'models/skybox/tropical_ft_min.jpg'
 
+}).then(function (resources) {
+	// start if the resources are loaded
+	init(resources);
 	render(0);
 });
 
@@ -240,10 +245,14 @@ function initCubeMap(resources) {
 	gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resources.env_night_neg_z);
 	//generate mipmaps (optional)
 	gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
-	// enable anisotropic filtering
-	var ext = gl.getExtension("WEBKIT_EXT_texture_filter_anisotropic");
-	var max_anisotropy = gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT);
-	gl.texParameterf(gl.TEXTURE_CUBE_MAP, ext.TEXTURE_MAX_ANISOTROPY_EXT, max_anisotropy);
+
+	// enable anisotropic filtering if available
+	var ext = (gl.getExtension("EXT_texture_filter_anisotropic")
+	|| gl.getExtension("MOZ_EXT_texture_filter_anisotropic")
+	|| gl.getExtension("WEBKIT_EXT_texture_filter_anisotropic"));
+
+	if (ext) gl.texParameterf(gl.TEXTURE_CUBE_MAP, ext.TEXTURE_MAX_ANISOTROPY_EXT, gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT));
+
 	//unbind the texture again
 	gl.bindTexture(gl.TEXTURE_CUBE_MAP, null);
 
@@ -388,10 +397,10 @@ function createWaterNode(gl, resources) {
 
 function createTransparentNodes(gl, resources, x, y, z) {
 
-	let materialNode = new MaterialSGNode([new FilterTextureSGNode(resources.tex_tree, 1.0, [new RenderSGNode(makeBillboard(2.0, 2.0))])]);
+	let materialNode = new MaterialSGNode([new NiceTextureSGNode(resources.tex_tree, 1.0, [new RenderSGNode(makeBillboard(2.0, 2.0))])]);
 	materialNode.specular = [0.1, 0.2, 0.15, 0.];
 	materialNode.shininess = 0.5;
-	return new ShaderSGNode(createProgram(gl, resources.vs_billboard, resources.fs_tex), [new TransformationSGNode(glm.transform({
+	return new ShaderSGNode(createProgram(gl, resources.vs_billboard, resources.fs_billboard), [new TransformationSGNode(glm.transform({
 		translate: [x, y, z],
 		scale: 0.75,
 		rotateX: 0,
@@ -405,7 +414,7 @@ function createSceneGraph(gl, resources) {
 	const root = new ShaderSGNode(createProgram(gl, resources.vs_phong, resources.fs_phong));
 
 	//add skybox by putting large sphere around us
-	var skybox = new ShaderSGNode(createProgram(gl, resources.vs_env, resources.fs_env), [new EnvironmentSGNode(envcubetexture, 4, false,
+	var skybox = new ShaderSGNode(createProgram(gl, resources.vs_skybox, resources.fs_skybox), [new SkyboxSGNode(envcubetexture, 4,
 		new RenderSGNode(makeSphere(50)))]);
 	root.append(skybox);
 
@@ -445,7 +454,7 @@ function createSceneGraph(gl, resources) {
 	root.append(spotLight);
 
 
-	islandPlaneFilter = new FilterTextureSGNode(resources.tex_grass, 0.2, [new RenderSGNode(resources.island_plane)]);
+	islandPlaneFilter = new NiceTextureSGNode(resources.tex_grass, 0.2, [new RenderSGNode(resources.island_plane)]);
 	let islandPlane = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [new MaterialSGNode([islandPlaneFilter])]);
 	islandPlane.ambient = [0, 0.3, 0, 1];
 	islandPlane.diffuse = [0.52, 0.86, 0.12, 1];
@@ -460,7 +469,7 @@ function createSceneGraph(gl, resources) {
 	root.append(rotateIslandPlane);
 
 	// lower part of the island
-	islandBodyFilter = new FilterTextureSGNode(resources.tex_dry, 0.05, [new RenderSGNode(resources.island_body)]);
+	islandBodyFilter = new NiceTextureSGNode(resources.tex_dry, 0.05, [new RenderSGNode(resources.island_body)]);
 	let islandBody = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), [new MaterialSGNode([islandBodyFilter])]);
 	islandBody.ambient = [0, 0.3, 0, 1];
 	islandBody.diffuse = [0.52, 0.86, 0.12, 1];
@@ -480,7 +489,7 @@ function createSceneGraph(gl, resources) {
 	}), [new ShaderSGNode(createProgram(gl, resources.vs_cross, resources.fs_cross), [new RenderSGNode(resources.cross)])])]);
 	root.append(coordinateCross);
 
-	let rockMaterialNode = new MaterialSGNode([new FilterTextureSGNode(resources.tex_rock, 0.2, [new RenderSGNode(resources.rock)])]);
+	let rockMaterialNode = new MaterialSGNode([new NiceTextureSGNode(resources.tex_rock, 0.2, [new RenderSGNode(resources.rock)])]);
 	rockMaterialNode.ambient = [0, 0.3, 0, 1];
 	rockMaterialNode.diffuse = [0.2, 0.2, 0.2, 1];
 	rockMaterialNode.specular = [0.1, 0.1, 0.1, 0.];
@@ -550,10 +559,14 @@ function makeLight(gl, resources, x, y, z) {
 	}
 
 	let light = new LightSGNode();
-	light.ambient = [0.1, 0.1, 0.1, 1];
+	light.ambient = [0.8, 0.8, 0.8, 1];
 	light.diffuse = [0.15, 0.15, 0.15, 1];
 	light.specular = [0, 0, 0, 1];
 	light.position = [0, 0, 0];
+/*
+	light.ambient = [0.2, 0.2, 0.2, 1];
+	light.diffuse = [0.8, 0.8, 0.8, 1];
+	light.specular = [1, 1, 1, 1];*/
 
 	let rotateLight = new TransformationSGNode(mat4.create());
 	let translateLight = new TransformationSGNode(glm.translate(x, y, z)); //translating the light is the same as setting the light position

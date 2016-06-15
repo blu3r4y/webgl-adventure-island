@@ -1,3 +1,6 @@
+/**
+ * sets up a spotlight
+ */
 class SpotLightSGNode extends TransformationSGNode {
 
 	constructor(position, direction, children) {
@@ -7,7 +10,6 @@ class SpotLightSGNode extends TransformationSGNode {
 		this.ambient = [0, 0, 0, 1];
 		this.diffuse = [1, 1, 1, 1];
 		this.specular = [1, 1, 1, 1];
-		//uniform name
 		this.uniform = 'u_lightSpot';
 
 		this._worldPosition = null;
@@ -38,9 +40,8 @@ class SpotLightSGNode extends TransformationSGNode {
 		//transform with the current model view matrix
 		const modelViewMatrix = mat4.multiply(mat4.create(), context.viewMatrix, context.sceneMatrix);
 		const original = this.position;
-		const position = vec4.transformMat4(vec4.create(), vec4.fromValues(original[0], original[1], original[2], 1), modelViewMatrix);
 
-		this._worldPosition = position;
+		this._worldPosition = vec4.transformMat4(vec4.create(), vec4.fromValues(original[0], original[1], original[2], 1), modelViewMatrix);
 	}
 
 	/**

@@ -1,6 +1,4 @@
-/* lab framework phong shader
- * by Samuel Gratzl
- */
+// vertex shader phong
 
 attribute vec3 a_position;
 attribute vec3 a_normal;
@@ -13,7 +11,6 @@ uniform vec3 u_lightPos;
 uniform vec3 u_lightSpotDir;
 uniform vec3 u_lightSpotPos;
 
-// output of this shader
 varying vec3 v_normalVec;
 varying vec3 v_eyeVec;
 varying vec3 v_lightVec;

@@ -1,3 +1,5 @@
+// fragment shader white monocolor
+
 precision mediump float;
 
 void main()

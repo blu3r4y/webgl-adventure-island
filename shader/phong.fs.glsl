@@ -1,6 +1,4 @@
-/* lab framework phong shader
- * by Samuel Gratzl
- */
+// fragment shader phong
 
 precision mediump float;
 
@@ -24,7 +22,6 @@ uniform Material u_material;
 uniform Light u_light;
 uniform Light u_lightSpot;
 
-// varying vectors for light computation
 varying vec3 v_normalVec;
 varying vec3 v_eyeVec;
 varying vec3 v_lightVec;
@@ -32,7 +29,7 @@ varying vec3 v_lightSpotVec;
 varying vec3 v_lightSpotDir;
 varying float v_isInLight;
 
-vec4 calculateSimplePointLight(Light light, Material material, vec3 lightVec, vec3 normalVec, vec3 eyeVec)
+vec4 simpleLight(Light light, Material material, vec3 lightVec, vec3 normalVec, vec3 eyeVec)
 {
 	lightVec = normalize(lightVec);
 	normalVec = normalize(normalVec);
@@ -50,7 +47,7 @@ vec4 calculateSimplePointLight(Light light, Material material, vec3 lightVec, ve
 	return c_amb + c_diff + c_spec + c_em;
 }
 
-vec4 calculateSpotPointLight(Light light, Material material, vec3 lightVec, vec3 normalVec, vec3 eyeVec)
+vec4 spotLight(Light light, Material material, vec3 lightVec, vec3 normalVec, vec3 eyeVec)
 {
 	vec4 c_amb  = clamp(light.ambient * material.ambient, 0.0, 1.0);
 	vec4 res = c_amb;
@@ -80,6 +77,6 @@ vec4 calculateSpotPointLight(Light light, Material material, vec3 lightVec, vec3
 
 void main()
 {
-	gl_FragColor = calculateSimplePointLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec)
-	+ calculateSpotPointLight(u_lightSpot, u_material, v_lightSpotVec, v_normalVec, v_eyeVec);
+	gl_FragColor = simpleLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec)
+		+ spotLight(u_lightSpot, u_material, v_lightSpotVec, v_normalVec, v_eyeVec);
 }

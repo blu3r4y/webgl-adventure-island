@@ -46,7 +46,7 @@ uniform bool u_enableClipPlane;
 uniform vec2 u_simpleClipPlane;
 varying vec3 v_position;
 
-vec4 calculateSimplePointLight(Light light, Material material, vec3 lightVec, vec3 normalVec, vec3 eyeVec, vec4 textureColor) {
+vec4 simpleLight(Light light, Material material, vec3 lightVec, vec3 normalVec, vec3 eyeVec, vec4 textureColor) {
 	lightVec = normalize(lightVec);
 	normalVec = normalize(normalVec);
 	eyeVec = normalize(eyeVec);
@@ -69,7 +69,7 @@ vec4 calculateSimplePointLight(Light light, Material material, vec3 lightVec, ve
 	return c_amb + c_diff + c_spec + c_em;
 }
 
-vec4 calculateSpotPointLight(Light light, Material material, vec3 lightVec, vec3 normalVec, vec3 eyeVec, vec4 textureColor) {
+vec4 spotLight(Light light, Material material, vec3 lightVec, vec3 normalVec, vec3 eyeVec, vec4 textureColor) {
 	material.diffuse = textureColor;
 	material.ambient = textureColor;
 	vec4 c_amb  = clamp(light.ambient * material.ambient, 0.0, 1.0);
@@ -106,7 +106,7 @@ void main (void) {
 		gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
 	}
 	else {
-		gl_FragColor = calculateSimplePointLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec, textureColor)
-			+ calculateSpotPointLight(u_lightSpot, u_material, v_lightSpotVec, v_normalVec, v_eyeVec, textureColor);
+		gl_FragColor = simpleLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec, textureColor)
+			+ spotLight(u_lightSpot, u_material, v_lightSpotVec, v_normalVec, v_eyeVec, textureColor);
 	}
 }

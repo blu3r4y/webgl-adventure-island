@@ -1,4 +1,4 @@
-/* very basic gouraud shading for a simple coordinate cross */
+// vertex shader for coordiante cross
 
 attribute vec3 a_position;
 attribute vec3 a_normal;
@@ -6,6 +6,9 @@ attribute vec3 a_normal;
 uniform mat4 u_modelView;
 uniform mat3 u_normalMatrix;
 uniform mat4 u_projection;
+
+// color for fragments
+varying vec4 v_color;
 
 struct Material
 {
@@ -51,9 +54,8 @@ Light light = Light(vec4(0.1, 0.1, 0.1, 1.),
                     vec4(1., 1., 1., 1.),
                     vec4(1., 1., 1., 1.));
 
-varying vec4 v_color;
-
-vec4 calculateSimplePointLight(Light light, Material material, vec3 lightVec, vec3 normalVec, vec3 eyeVec)
+// gouraud shading
+vec4 simpleLight(Light light, Material material, vec3 lightVec, vec3 normalVec, vec3 eyeVec)
 {
 	lightVec = normalize(lightVec);
 	normalVec = normalize(normalVec);
@@ -62,7 +64,7 @@ vec4 calculateSimplePointLight(Light light, Material material, vec3 lightVec, ve
 	float diffuse = max(dot(normalVec,lightVec),0.0);
 
 	vec3 reflectVec = reflect(-lightVec,normalVec);
-	float spec = pow( max( dot(reflectVec, eyeVec), 0.0) , material.shininess);
+	float spec = pow(max(dot(reflectVec, eyeVec), 0.0), material.shininess);
 
 	vec4 c_amb  = clamp(light.ambient * material.ambient, 0.0, 1.0);
 	vec4 c_diff = clamp(diffuse * light.diffuse * material.diffuse, 0.0, 1.0);
@@ -81,12 +83,14 @@ void main()
 
 	Material material = neutral;
 
+	// choose material based on coordinates
 	if (a_position.y > 2.) material = green;
 	else if (a_position.x > 2.) material = blue;
 	else if (a_position.z > 2.) material = red;
 	else material = neutral;
 
-	v_color = calculateSimplePointLight(light, material, lightVec, normalVec, eyeVec);
+	// calculate the color there
+	v_color = simpleLight(light, material, lightVec, normalVec, eyeVec);
 
 	gl_Position = u_projection * eyePosition;
 }

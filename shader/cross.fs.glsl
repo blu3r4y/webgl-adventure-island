@@ -1,7 +1,8 @@
-/* simple coordinate cross shading only works per vertex */
+// fragment shader for coordinate cross
 
 precision mediump float;
 
+// color for fragments
 varying vec4 v_color;
 
 void main()

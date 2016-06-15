@@ -1,8 +1,7 @@
-// Phong Billboard Vertex Shader
+// vertex shader for billboards with phong shading
 
 attribute vec3 a_position;
 attribute vec3 a_normal;
-//given texture coordinates per vertex
 attribute vec2 a_texCoord;
 
 uniform mat4 u_modelView;
@@ -14,14 +13,12 @@ uniform vec3 u_lightPos;
 uniform vec3 u_lightSpotDir;
 uniform vec3 u_lightSpotPos;
 
-//output of this shader
 varying vec3 v_normalVec;
 varying vec3 v_eyeVec;
 varying vec3 v_lightVec;
 varying vec3 v_lightSpotDir;
 varying vec3 v_lightSpotVec;
 varying vec3 v_position;
-
 varying vec2 v_texCoord;
 
 void main() {
