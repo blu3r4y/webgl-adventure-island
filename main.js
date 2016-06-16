@@ -166,13 +166,21 @@ function createSceneGraph(gl, resources) {
 	// main light sources
 	root.append(mainLightUp);  // upper light
 
-	pyramidNode = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({
-		translate: [0, 0, 0.5],
-		scale: 1
-	}), [new RenderSGNode(makePyramid())])]);
+	let pyramidMaterial = new MaterialSGNode([new RenderSGNode(makePyramid())]);
+
+	pyramidMaterial.ambient = [0.24725, 0.1995, 0.2745, 1];
+	pyramidMaterial.diffuse = [0.75164, 0.60648, 0.42648, 1];
+	pyramidMaterial.specular = [0.628281, 0.555802, 0.666065, 1];
+	pyramidMaterial.emission = [0.1, 0.2, 0.1, 1];
+
+	pyramidNode = new TransformationSGNode(mat4.create(), [pyramidMaterial]);
+
 	let vehicle = new MaterialSGNode([
 		new RenderSGNode(makeVehicle()),
-		pyramidNode
+		new TransformationSGNode(glm.transform({
+			translate: [0, 0, 0.5],
+			scale: 0.75
+		}), [pyramidNode])
 	]);
 	vehicle.ambient = [0.24725, 0.1995, 0.2745, 1];
 	vehicle.diffuse = [0.75164, 0.60648, 0.42648, 1];

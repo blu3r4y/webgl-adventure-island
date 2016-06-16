@@ -207,7 +207,8 @@ function renderAnimations(timeInMilliseconds)
 	waterShaderNode.camera = [camera.istPos.x, camera.istPos.y, camera.istPos.z];
 
 	//Animate pyramid always
-	pyramidNode.matrix = glm.rotateZ(timeInMilliseconds * -0.01);
+	pyramidNode.matrix = glm.rotateZ(timeInMilliseconds * -rotationFactor); //glm.transform({translate: [0, 0.5, 0],
+//	scale: 0.75, rotateY: timeInMilliseconds * -0.01});//glm.rotateZ(timeInMilliseconds * -0.01);
 	// Animate rock every 100 ms
 	if (animateRock && ((timeInMilliseconds - animationTime) > 100)) {
 		//Alternate between 0 and 1
