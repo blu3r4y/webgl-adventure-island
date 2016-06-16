@@ -38,6 +38,7 @@ var animateCrab = false;
 var animationCrabStart;
 
 var animateCrystal = false;
+var crystalHeight = 16;
 
 const crystalData = {
 	pos: {
@@ -132,7 +133,7 @@ function renderAnimations(timeInMilliseconds)
 				}
 				break;
 			case 6:
-				if (timeInMilliseconds - animationCrabStart > 360 / rotationFactor * circles) {
+				if (timeInMilliseconds - animationCrabStart > 360 / rotationFactor * (circles-1)) {
 					state++;
 				}
 				break;
@@ -162,6 +163,30 @@ function renderAnimations(timeInMilliseconds)
 					followVehicle(7);
 					state++;
 					lastStateTime = timeInMilliseconds;
+				}
+				break;
+			case 10:
+				if(crystalData.pos.y > (crystalHeight/4) / crystalScale){
+					spotLight.ambient = [0, 0, 0, 1];
+					spotLight.diffuse = [0, 0, 0, 1];
+					spotLight.specular = [0, 0, 0, 1];
+					followVehicle(12);
+					state++;
+					lastStateTime = timeInMilliseconds;
+				}
+				break;
+			case 11:
+				if(crystalData.pos.y > crystalHeight / crystalScale){
+					state++;
+					lastStateTime = timeInMilliseconds;
+				}
+				break;
+			case 12:
+				if(timeInMilliseconds < 30000){
+					moveBackwards();
+				}
+				else{
+					state++;
 				}
 				break;
 			default: //We're done with the movie, swith to user mode
@@ -224,8 +249,24 @@ function renderAnimations(timeInMilliseconds)
 			translate: [0, crystalData.pos.y++, 0],
 			rotateY: 270 + timeInMilliseconds * -rotationFactor
 		});
-		if (crystalData.pos.y > 10 / 0.025) {
+		crystalLightNode.matrix = glm.transform({
+			translate: [0, crystalData.pos.y++, 0],
+			rotateY: 270 + timeInMilliseconds * -rotationFactor
+		});
+		if(mainLightUpLight.diffuse[0] < 0.5){
+			mainLightUpLight.diffuse[0] += 0.1;
+			mainLightUpLight.diffuse[1] += 0.1;
+			mainLightUpLight.diffuse[2] += 0.1;
+		}
+		if(mainLightUpLight.specular[0] < 0.6){
+			mainLightUpLight.specular[0] += 0.1;
+			mainLightUpLight.specular[1] += 0.1;
+			mainLightUpLight.specular[2] += 0.1;
+		}
+		if (crystalData.pos.y > crystalHeight / crystalScale) {
 			animateCrystal = false;
+			mainLightUpLight.ambient = [0.5, 0.5, 0.5, 1];
+			toggleCubeMapTexture(activeCubeMap === 0 ? 1 : 0);
 		}
 	}
 	//vehicleData.rotation.z = timeInMilliseconds*-rotationFactor;

@@ -22,13 +22,18 @@ var islandBodyNode = null;
 var waterShaderNode = null;
 
 // light sources (rotation nodes)
-var mainLightUp = null;
 var mainLightDown = null;
 
 // spot light source (only light node)
 var spotLight = null;
+//main light source (only light node)
+var mainLightUpLight = null;
+var crystalLightNode = null;
+
+var crystalScale = 0.025;
 
 var lastSampleTime = 0;
+
 
 // load the resources
 loadResources({
@@ -142,7 +147,7 @@ function createTransparentSceneGraph(gl, resources) {
 	for (var i = 0; i < 3; i++) {
 		let billboard = createBillboard(gl, resources, 6 - i * 6, 1.5, 15);
 		billboard.append(spotLight);
-		billboard.append(mainLightUp);
+		billboard.append(mainLightUpLight);
 		transparentRoot.append(billboard);
 	}
 
@@ -160,11 +165,42 @@ function createSceneGraph(gl, resources) {
 	root.append(skybox);
 
 	// y axis of light source does not work as expected somehow
-	mainLightUp = makeLight(gl, resources, 0, 10, 0);
-	mainLightDown = makeLight(gl, resources, 10, -20, 10);
+	mainLightUpLight = new LightSGNode();
+	mainLightUpLight.ambient = [0, 0, 0, 1];
+	mainLightUpLight.diffuse = [0, 0, 0, 1];
+	mainLightUpLight.specular = [0, 0, 0, 1];
+	mainLightUpLight.position = [0, 0, 0];
+	mainLightDown = makeLightDown(gl, resources, 10, -20, 10);
 
-	// main light sources
-	root.append(mainLightUp);  // upper light
+	let crystal = new MaterialSGNode([new RenderSGNode(resources.crystal)]);
+	crystal.ambient = [1, 1, 0.8, 1];
+	crystal.diffuse = [1, 1, 0.8, 1];
+	crystal.specular = [1, 1, 0.8, 1];
+	crystal.emission = [0, 0, 0, 1];
+	crystal.shininess = 0.6;
+	crystalNode = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({
+		translate: [0, 0, 2 / crystalScale],
+		rotateX: 90
+	}), [crystal])
+	]);
+	let crystalOnlyNode = new TransformationSGNode(glm.transform({
+		translate: [crystalData.pos.x, crystalData.pos.y, crystalData.pos.z],
+		scale: crystalScale
+	}), crystalNode);
+
+	root.append(crystalOnlyNode);
+
+	crystalLightNode = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({
+		translate: [0, 0, 2 / crystalScale],
+		rotateX: 90
+	}), [mainLightUpLight])
+	]);
+	let lightOnlyNode = new TransformationSGNode(glm.transform({
+		translate: [crystalData.pos.x, crystalData.pos.y, crystalData.pos.z],
+		scale: crystalScale
+	}), crystalLightNode);
+
+	root.append(crystalLightNode);
 
 	let pyramidMaterial = new MaterialSGNode([new RenderSGNode(makePyramid())]);
 
@@ -189,7 +225,7 @@ function createSceneGraph(gl, resources) {
 
 	let spLight = makeSpotLight(gl, resources, 0, -0.5, 0.25);
 
-	vehicleNode = //new TransformationSGNode(mat4.create(), [
+	vehicleNode =
 		new TransformationSGNode(glm.transform({
 			translate: [vehicleData.isPos.x, vehicleData.isPos.y, vehicleData.isPos.z],
 			rotateX: vehicleData.rotation.x,
@@ -197,7 +233,6 @@ function createSceneGraph(gl, resources) {
 			rotateY: vehicleData.rotation.y
 		}), [
 			vehicle, spLight
-			//  ])
 		]);
 	root.append(vehicleNode);
 	root.append(spotLight);
@@ -209,7 +244,7 @@ function createSceneGraph(gl, resources) {
 	islandPlane.diffuse = [0.52, 0.86, 0.12, 1];
 	islandPlane.specular = [0.1, 0.2, 0.15, 0.];
 	islandPlane.shininess = 1.0;
-	islandPlane.append(mainLightUp);
+	islandPlane.append(crystalLightNode);
 	islandPlane.append(spotLight);
 	let rotateIslandPlane = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({
 		translate: [0, 0, 0],
@@ -250,9 +285,9 @@ function createSceneGraph(gl, resources) {
 		rotateZ: 0
 	}), [rockMaterialNode])]);
 	rockShaderNode.append(spotLight);
-	rockShaderNode.append(mainLightUp);
+	rockShaderNode.append(crystalLightNode);
 	rockNode = new TransformationSGNode(mat4.create(), [rockShaderNode]);
-	root.append(rockNode);
+	islandPlane.append(rockNode);
 	let crab = new MaterialSGNode([new RenderSGNode(resources.crab)]);
 	crab.ambient = [1, 0.1995, 0.2745, 1];
 	crab.diffuse = [1, 0.60648, 0.42648, 1];
@@ -268,26 +303,12 @@ function createSceneGraph(gl, resources) {
 		translate: [rock.pos.x, 0, rock.pos.z],
 		rotateY: 270
 	}), [crabNode]));
-	let crystal = new MaterialSGNode([new RenderSGNode(resources.crystal)]);
-	crystal.ambient = [1, 1, 0.8, 1];
-	crystal.diffuse = [1, 1, 0.8, 1];
-	crystal.specular = [1, 1, 0.8, 1];
-	crystal.shininess = 0.5;
-	crystalNode = new TransformationSGNode(mat4.create(), [new TransformationSGNode(glm.transform({
-		translate: [0, 0, 2 / 0.025],
-		rotateX: 90
-	}), [
-		crystal])
-	]);
-	root.append(new TransformationSGNode(glm.transform({
-		translate: [crystalData.pos.x, crystalData.pos.y, crystalData.pos.z],
-		scale: 0.025
-	}), crystalNode));
+
 
 	return root;
 }
 
-function makeLight(gl, resources, x, y, z) {
+function makeLightDown(gl, resources, x, y, z) {
 	function createLightSphere() {
 		return new ShaderSGNode(createProgram(gl, resources.vs_single, resources.fs_single), [new RenderSGNode(makeSphere(.2, 10, 10))]);
 	}
