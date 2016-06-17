@@ -128,7 +128,7 @@ function init(resources) {
 	initInteraction(gl.canvas);
 
 	// make it day immediatly - debug
-	//wanimateCrystal = true; userControlled = true;
+	//animateCrystal = true; userControlled = true;
 }
 
 function createWaterSceneGraph(gl, resources) {
@@ -213,6 +213,8 @@ function createSceneGraph(gl, resources) {
 	objectRoot.append(islandNode);
 	objectRoot.append(makeIslandBody(gl, resources));
 
+
+
 	// crystal
 	islandNode.append(makeCrystal(gl, resources));
 
@@ -222,7 +224,7 @@ function createSceneGraph(gl, resources) {
 	// vehicle
 	vehicleNode = makeVehicle(gl, resources);
 	islandNode.append(vehicleNode);
-	islandNode.append(spotLight.light);
+	//islandNode.append(spotLight.light);
 
 	// rock
 	rockNode = makeRock(gl, resources);
@@ -300,9 +302,9 @@ function makeCrystalLight(gl, resources) {
 
 function setSpotLightDirection() {
 	spotLight.light.direction = [
-		-Math.sin(deg2rad(camera.sollRotation.x + vehicleData.rotation.z - 180)),
+		-Math.sin(deg2rad(vehicleData.rotation.z)),
 		0,
-		Math.cos(deg2rad(camera.sollRotation.x + vehicleData.rotation.z - 180))];
+		Math.cos(deg2rad(vehicleData.rotation.z - 180))];
 }
 
 /**

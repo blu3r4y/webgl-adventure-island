@@ -16,33 +16,34 @@ struct Light {
 	vec4 specular;
 };
 
-// illumination related variables
 uniform Material u_material;
 uniform Light u_light;
 uniform Light u_lightSpot;
+
+uniform vec3 u_lightSpotDir;
+uniform bool u_enableClipPlane;
+uniform vec2 u_simpleClipPlane;
+
+uniform sampler2D u_tex;
+
 varying vec3 v_normalVec;
 varying vec3 v_eyeVec;
 varying vec3 v_lightVec;
 varying vec3 v_lightSpotVec;
 varying vec3 v_lightSpotDir;
-
-// texture related variables
-uniform sampler2D u_tex;
 varying vec2 v_texCoord;
-
-uniform bool u_enableClipPlane;
-uniform vec2 u_simpleClipPlane;
 varying float v_verticalPosition;
+varying vec3 v_normal;
 
 vec4 simpleLight(Light light, Material material, vec3 lightVec, vec3 normalVec, vec3 eyeVec, vec4 textureColor) {
 	lightVec = normalize(lightVec);
 	normalVec = normalize(normalVec);
 	eyeVec = normalize(eyeVec);
 
-	//compute diffuse term
+	// compute diffuse term
 	float diffuse = max(dot(normalVec,lightVec),0.0);
 
-	//compute specular term
+	// compute specular term
 	vec3 reflectVec = reflect(-lightVec,normalVec);
 	float spec = pow( max( dot(reflectVec, eyeVec), 0.0) , material.shininess);
 
@@ -57,34 +58,51 @@ vec4 simpleLight(Light light, Material material, vec3 lightVec, vec3 normalVec, 
 	return c_amb + c_diff + c_spec + c_em;
 }
 
-vec4 spotLight(Light light, Material material, vec3 lightVec, vec3 normalVec, vec3 eyeVec, vec4 textureColor)
+vec4 spotLight(Light light, Material material, vec3 lightVec, vec3 dirVec, vec3 normalVec, vec3 normalVecStatic, vec3 eyeVec, vec4 textureColor)
 {
-	material.diffuse = textureColor;
-	material.ambient = textureColor;
-	vec4 c_amb  = clamp(light.ambient * material.ambient, 0.0, 1.0);
-	vec4 res = c_amb;
+	float distance = length(lightVec);
+
 	lightVec = normalize(lightVec);
 	normalVec = normalize(normalVec);
+	normalVecStatic = normalize(normalVecStatic);
 	eyeVec = normalize(eyeVec);
-	vec3 D = normalize(v_lightSpotDir);
+	dirVec = normalize(dirVec);
 
+	// compute diffuse term
 	float diffuse = max(dot(normalVec,lightVec),0.0);
+
+	// compute specular term
 	vec3 reflectVec = reflect(-lightVec,normalVec);
 	float spec = pow( max( dot(reflectVec, eyeVec), 0.0) , material.shininess);
 
-	float spotCutoffCosine = 0.6;
+	material.diffuse = textureColor;
+	material.ambient = textureColor;
 
-	if(dot(-lightVec,D) > spotCutoffCosine){
-		float diffuse = max(dot(normalVec,lightVec),0.0);
-		if(diffuse > 0.0){
-			res += clamp(diffuse * light.diffuse * material.diffuse, 0.0, 1.0);
-			vec3 reflectVec = reflect(-lightVec,normalVec);
-			float spec = pow( max(dot(reflectVec, eyeVec),0.0) , material.shininess);
+	float insideCone = dot(-lightVec, dirVec);
 
-			res += clamp(spec * light.specular * material.specular, 0.0, 1.0);
-		}
+	// https://www.desmos.com/calculator/nmnaud1hrw
+	float a = 0.2;
+	float b = 0.01;
+
+	vec4 c_spot = vec4(0.0, 0.0, 0.0, 1.0);
+
+	// cone degree
+    if (degrees(acos(insideCone)) < 35.0) {
+    	// check if some fragment faces exactly against the light source
+		float hardShadow = dot(lightVec, normalVecStatic);
+		// calculate light attenuation
+		float spot = 1.0 / (1.0 + a * distance + b * distance * distance);
+		// target color
+		c_spot = clamp(spot * light.diffuse * material.diffuse, 0.0, 1.0);
+		// check simple hard shadow based on surface normals
+		if (hardShadow < 0.0) c_spot *= 0.0;
 	}
-	return res;
+
+	vec4 c_amb  = clamp(light.ambient * material.ambient, 0.0, 1.0);
+	vec4 c_spec = clamp(spec * light.specular * material.specular, 0.0, 1.0);
+	vec4 c_em   = material.emission;
+
+	return c_amb + c_spot + c_spec + c_em;
 }
 
 void main (void) {
@@ -94,6 +112,5 @@ void main (void) {
 
 	vec4 textureColor = texture2D(u_tex, v_texCoord);
 	gl_FragColor = simpleLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec, textureColor)
-				+ spotLight(u_lightSpot, u_material, v_lightSpotVec, v_normalVec, v_eyeVec, textureColor);
-
+				+ spotLight(u_lightSpot, u_material, v_lightSpotVec, u_lightSpotDir, v_normalVec, v_normal, v_eyeVec, textureColor);
 }

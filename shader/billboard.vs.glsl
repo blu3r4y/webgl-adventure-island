@@ -10,7 +10,6 @@ uniform mat4 u_projection;
 uniform mat4 u_invView;
 
 uniform vec3 u_lightPos;
-uniform vec3 u_lightSpotDir;
 uniform vec3 u_lightSpotPos;
 
 varying vec3 v_normalVec;
@@ -20,18 +19,22 @@ varying vec3 v_lightSpotDir;
 varying vec3 v_lightSpotVec;
 varying vec3 v_position;
 varying vec2 v_texCoord;
+varying vec3 v_normal;
 
 void main() {
 	vec4 eyePosition = u_modelView * vec4(a_position,1);
 
 	v_position = a_position;
 
+	// normal vector in eye space
 	v_normalVec = u_normalMatrix * a_normal;
+	v_normal = a_normal;
 
 	v_eyeVec = -eyePosition.xyz;
+
+	// vector from light surface to viewer in eye space
 	v_lightVec = u_lightPos - eyePosition.xyz;
-	v_lightSpotVec = u_lightSpotPos - eyePosition.xyz;
-	v_lightSpotDir = u_lightSpotDir;
+	v_lightSpotVec = u_lightSpotPos - (u_invView * eyePosition).xyz;
 
 	v_texCoord = a_texCoord;
 

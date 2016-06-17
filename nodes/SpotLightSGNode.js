@@ -36,14 +36,6 @@ class SpotLightSGNode extends TransformationSGNode {
 		gl.uniform3f(gl.getUniformLocation(context.shader, this.uniform + 'Dir'), this.direction[0], this.direction[1], this.direction[2]);
 	}
 
-	computeLightPosition(context) {
-		//transform with the current model view matrix
-		const modelViewMatrix = mat4.multiply(mat4.create(), context.viewMatrix, context.sceneMatrix);
-		const original = this.position;
-
-		this._worldPosition = vec4.transformMat4(vec4.create(), vec4.fromValues(original[0], original[1], original[2], 1), modelViewMatrix);
-	}
-
 	/**
 	 * set the light uniforms without updating the last light position
 	 */
@@ -53,11 +45,11 @@ class SpotLightSGNode extends TransformationSGNode {
 	}
 
 	render(context) {
-		this.computeLightPosition(context);
 		this.setLight(context);
 
 		//since this a transformation node update the matrix according to my position
 		this.matrix = glm.translate(this.position[0], this.position[1], this.position[2]);
+
 		//render children
 		super.render(context);
 	}

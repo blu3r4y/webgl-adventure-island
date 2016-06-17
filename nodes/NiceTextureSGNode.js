@@ -51,6 +51,7 @@ class NiceTextureSGNode extends SGNode {
 	render(context) {
 		if (this.textureId < 0) this.init(context.gl);
 
+		gl.uniformMatrix4fv(gl.getUniformLocation(context.shader, 'u_invView'), false, context.invViewMatrix);
 		gl.uniform1f(gl.getUniformLocation(context.shader, "u_scale"), this.scale);
 		gl.uniform1i(gl.getUniformLocation(context.shader, this.uniform), this.textureunit);
 
