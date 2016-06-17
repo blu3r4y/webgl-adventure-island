@@ -49,7 +49,6 @@ class WaterTextureSGNode extends SGNode {
 	render(context) {
 		if (this.dudvId < 0) this.init(context.gl);
 
-		// reduce to 3x3 matrix since we only process direction vectors (ignore translation)
 		let invView3x3 = mat3.fromMat4(mat3.create(), context.invViewMatrix);
 		gl.uniformMatrix3fv(gl.getUniformLocation(context.shader, 'u_invView'), false, invView3x3);
 

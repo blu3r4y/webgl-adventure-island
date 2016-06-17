@@ -1,18 +1,18 @@
 'use strict';
 
 // skybox texture
-var envcubetexture;
+var skyboxTextureId;
 
 // active cubemap day = 0, night = 1
-var activeCubeMap = 0;
+var activeSkybox = 0;
 
 function initSkybox(resources) {
 	//create the texture
-	envcubetexture = gl.createTexture();
+	skyboxTextureId = gl.createTexture();
 	//define some texture unit we want to work on
 	gl.activeTexture(gl.TEXTURE0);
 	//bind the texture to the texture unit
-	gl.bindTexture(gl.TEXTURE_CUBE_MAP, envcubetexture);
+	gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyboxTextureId);
 	//set sampling parameters
 	gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
 	gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
@@ -39,12 +39,12 @@ function initSkybox(resources) {
 	//unbind the texture again
 	gl.bindTexture(gl.TEXTURE_CUBE_MAP, null);
 
-	activeCubeMap = 1;
+	activeSkybox = 1;
 }
 
 function toggleCubeMapTexture(type) {
 	gl.activeTexture(gl.TEXTURE0);
-	gl.bindTexture(gl.TEXTURE_CUBE_MAP, envcubetexture);
+	gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyboxTextureId);
 
 	if (type === 0) {
 		gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_day_pos_x);
@@ -66,5 +66,5 @@ function toggleCubeMapTexture(type) {
 	gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
 	gl.bindTexture(gl.TEXTURE_CUBE_MAP, null);
 
-	activeCubeMap = type;
+	activeSkybox = type;
 }

@@ -29,6 +29,10 @@ varying vec3 v_lightSpotVec;
 varying vec3 v_lightSpotDir;
 varying float v_isInLight;
 
+uniform bool u_enableClipPlane;
+uniform vec2 u_simpleClipPlane;
+varying float v_verticalPosition;
+
 vec4 simpleLight(Light light, Material material, vec3 lightVec, vec3 normalVec, vec3 eyeVec)
 {
 	lightVec = normalize(lightVec);
@@ -77,6 +81,9 @@ vec4 spotLight(Light light, Material material, vec3 lightVec, vec3 normalVec, ve
 
 void main()
 {
+	// check clipping plane
+	if (u_enableClipPlane) if (u_simpleClipPlane.x > 0.0 ? v_verticalPosition < u_simpleClipPlane.y : v_verticalPosition > u_simpleClipPlane.y) discard;
+
 	gl_FragColor = simpleLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec)
 		+ spotLight(u_lightSpot, u_material, v_lightSpotVec, v_normalVec, v_eyeVec);
 }

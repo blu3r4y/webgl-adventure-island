@@ -27,12 +27,12 @@ varying vec2 v_texCoord;
 // texture scaling factor
 uniform float u_scale;
 
-varying vec3 v_position;
+varying float v_verticalPosition;
 
 void main()
 {
 	vec4 eyePosition = u_modelView * vec4(a_position,1);
-	v_position = a_position;
+	v_verticalPosition = (u_invView * eyePosition).y;
 	v_normalVec = u_normalMatrix * a_normal;
 	v_eyeVec = -eyePosition.xyz;
 	v_lightVec = u_lightPos - eyePosition.xyz;

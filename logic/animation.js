@@ -90,9 +90,9 @@ function renderAnimations(timeInMilliseconds)
 				if (vehicleDone) {
 					state++;
 					lastStateTime = timeInMilliseconds;
-					spotLight.ambient = [0.1, 0.1, 0.1, 1];
-					spotLight.diffuse = [1, 1, 1, 1];
-					spotLight.specular = [1, 1, 1, 1];
+					spotLight.light.ambient = [0.1, 0.1, 0.1, 1];
+					spotLight.light.diffuse = [1, 1, 1, 1];
+					spotLight.light.specular = [1, 1, 1, 1];
 					vehicleData.animation = false;
 				}
 				break;
@@ -167,9 +167,9 @@ function renderAnimations(timeInMilliseconds)
 				break;
 			case 10:
 				if(crystalData.pos.y > (crystalHeight/4) / crystalScale){
-					spotLight.ambient = [0, 0, 0, 1];
-					spotLight.diffuse = [0, 0, 0, 1];
-					spotLight.specular = [0, 0, 0, 1];
+					spotLight.light.ambient = [0, 0, 0, 1];
+					spotLight.light.diffuse = [0, 0, 0, 1];
+					spotLight.light.specular = [0, 0, 0, 1];
 					followVehicle(12);
 					state++;
 					lastStateTime = timeInMilliseconds;
@@ -223,7 +223,7 @@ function renderAnimations(timeInMilliseconds)
 	}
 
 	// rotate lower light just for fun
-	mainLightDown.matrix = glm.rotateY(timeInMilliseconds * 0.2);
+	mainLightDown.node.matrix = glm.rotateY(timeInMilliseconds * 0.2);
 
 	// animate water
 	waterShaderNode.waveOffset += 0.0002;
@@ -249,24 +249,24 @@ function renderAnimations(timeInMilliseconds)
 			translate: [0, crystalData.pos.y++, 0],
 			rotateY: 270 + timeInMilliseconds * -rotationFactor
 		});
-		crystalLightNode.matrix = glm.transform({
+		crystalLight.node.matrix = glm.transform({
 			translate: [0, crystalData.pos.y++, 0],
 			rotateY: 270 + timeInMilliseconds * -rotationFactor
 		});
-		if(mainLightUpLight.diffuse[0] < 0.5){
-			mainLightUpLight.diffuse[0] += 0.1;
-			mainLightUpLight.diffuse[1] += 0.1;
-			mainLightUpLight.diffuse[2] += 0.1;
+		if(crystalLight.light.diffuse[0] < 0.5){
+			crystalLight.light.diffuse[0] += 0.1;
+			crystalLight.light.diffuse[1] += 0.1;
+			crystalLight.light.diffuse[2] += 0.1;
 		}
-		if(mainLightUpLight.specular[0] < 0.6){
-			mainLightUpLight.specular[0] += 0.1;
-			mainLightUpLight.specular[1] += 0.1;
-			mainLightUpLight.specular[2] += 0.1;
+		if(crystalLight.light.specular[0] < 0.6){
+			crystalLight.light.specular[0] += 0.1;
+			crystalLight.light.specular[1] += 0.1;
+			crystalLight.light.specular[2] += 0.1;
 		}
 		if (crystalData.pos.y > crystalHeight / crystalScale) {
 			animateCrystal = false;
-			mainLightUpLight.ambient = [0.5, 0.5, 0.5, 1];
-			toggleCubeMapTexture(activeCubeMap === 0 ? 1 : 0);
+			crystalLight.light.ambient = [0.5, 0.5, 0.5, 1];
+			toggleCubeMapTexture(activeSkybox === 0 ? 1 : 0);
 		}
 	}
 	//vehicleData.rotation.z = timeInMilliseconds*-rotationFactor;
@@ -276,7 +276,7 @@ function renderAnimations(timeInMilliseconds)
 		rotateX: vehicleData.rotation.x,
 		rotateY: vehicleData.rotation.y
 	});
-	spotLight.position = [vehicleData.isPos.x, vehicleData.isPos.y, vehicleData.isPos.z];
+	spotLight.light.position = [vehicleData.isPos.x, vehicleData.isPos.y, vehicleData.isPos.z];
 	setSpotLightDirection();
 }
 

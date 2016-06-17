@@ -81,7 +81,7 @@ function initInteraction(canvas) {
 			userControlled = true;
 		}
 		else if (event.code === 'KeyN') {
-			toggleCubeMapTexture(activeCubeMap === 0 ? 1 : 0);
+			toggleCubeMapTexture(activeSkybox === 0 ? 1 : 0);
 		}
 	});
 	// map pressed keys

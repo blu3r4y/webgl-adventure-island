@@ -32,7 +32,7 @@ varying vec2 v_texCoord;
 
 uniform bool u_enableClipPlane;
 uniform vec2 u_simpleClipPlane;
-varying vec3 v_position;
+varying float v_verticalPosition;
 
 vec4 simpleLight(Light light, Material material, vec3 lightVec, vec3 normalVec, vec3 eyeVec, vec4 textureColor) {
 	lightVec = normalize(lightVec);
@@ -90,7 +90,7 @@ vec4 spotLight(Light light, Material material, vec3 lightVec, vec3 normalVec, ve
 void main (void) {
 
 	// check clipping plane
-	if (u_enableClipPlane) if (u_simpleClipPlane.x > 0.0 ? v_position.y < u_simpleClipPlane.y : v_position.y > u_simpleClipPlane.y) discard;
+	if (u_enableClipPlane) if (u_simpleClipPlane.x > 0.0 ? v_verticalPosition < u_simpleClipPlane.y : v_verticalPosition > u_simpleClipPlane.y) discard;
 
 	vec4 textureColor = texture2D(u_tex, v_texCoord);
 	gl_FragColor = simpleLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec, textureColor)
