@@ -46,6 +46,7 @@ function toggleCubeMapTexture(type) {
 	gl.activeTexture(gl.TEXTURE0);
 	gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyboxTextureId);
 
+
 	if (type === 0) {
 		gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_day_pos_x);
 		gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_day_neg_x);
@@ -63,6 +64,8 @@ function toggleCubeMapTexture(type) {
 		gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, resourcesGlobal.env_night_neg_z);
 	}
 
+	changeInfoBoxTheme(type);
+	
 	gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
 	gl.bindTexture(gl.TEXTURE_CUBE_MAP, null);
 

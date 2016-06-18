@@ -1,48 +1,67 @@
 body {
 	background-color: beige;
 	font-family: sans-serif;
+	overflow: hidden;
+	margin: 0;
 }
-
 canvas {
-	width: 98vw;
-	height: 98vh;
+	width: 100vw;
+	height: 100vh;
 	padding-left: 0;
 	padding-right: 0;
 	margin-left: auto;
 	margin-right: auto;
 	display: block;
 }
-.info-div {
+#info-div {
 	position: absolute;
-	top: 1vh;
-	right: 1vw;
+	top: 5px;
+	right: 5px;
 	margin: 5px;
 	padding: 5px;
 	font-size: 8pt;
-	color: rgb(200, 200, 200);
 }
-.info-div div {
-	width: 100px;
+#info-div.light {
+	color: rgb(255, 255, 255);
+}
+#info-div.dark {
+	color: rgb(150, 150, 150);
+}
+#info-div div {
+	width: 85px;
 	float: right;
 	text-align: right;
 }
+#info-div.light div a:visited, #info-div.light div a:link {
+	color: rgb(255, 255, 255);
+}
+#info-div.dark div a:visited, #info-div.dark div a:link {
+	color: rgb(150, 150, 150);
+}
 a:link {
-	color: rgb(200, 200, 200);
 	text-decoration: none;
 	font-style: italic;
 }
 a:visited {
-	color: rgb(200, 200, 200);
 	text-decoration: none;
 	font-style: italic;
 }
 a:hover {
-	color: orangered;
+	color: orangered !important;
 	font-weight: bold;
 	text-decoration: none;
 }
 a:active {
-	color: orangered;
+	color: orangered !important;
 	font-weight: bold;
 	text-decoration: none;
+}
+
+.noselect {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
 }
