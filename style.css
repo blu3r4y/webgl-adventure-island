@@ -1,4 +1,48 @@
+body {
+	background-color: beige;
+	font-family: sans-serif;
+}
+
 canvas {
 	width: 98vw;
 	height: 98vh;
+	padding-left: 0;
+	padding-right: 0;
+	margin-left: auto;
+	margin-right: auto;
+	display: block;
+}
+.info-div {
+	position: absolute;
+	top: 1vh;
+	right: 1vw;
+	margin: 5px;
+	padding: 5px;
+	font-size: 8pt;
+	color: rgb(200, 200, 200);
+}
+.info-div div {
+	width: 100px;
+	float: right;
+	text-align: right;
+}
+a:link {
+	color: rgb(200, 200, 200);
+	text-decoration: none;
+	font-style: italic;
+}
+a:visited {
+	color: rgb(200, 200, 200);
+	text-decoration: none;
+	font-style: italic;
+}
+a:hover {
+	color: orangered;
+	font-weight: bold;
+	text-decoration: none;
+}
+a:active {
+	color: orangered;
+	font-weight: bold;
+	text-decoration: none;
 }
