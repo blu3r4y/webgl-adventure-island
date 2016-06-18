@@ -171,7 +171,7 @@ function renderAnimations(timeInMilliseconds)
 			break;
 		case 9:
 			if (timeInMilliseconds - lastStateTime > 500) {
-				followVehicle(7);
+				if(!userControlled) followVehicle(7);
 				state++;
 				lastStateTime = timeInMilliseconds;
 			}

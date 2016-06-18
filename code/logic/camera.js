@@ -86,7 +86,7 @@ function initInteraction(canvas) {
 		if ((event.code === 'KeyC') && (!userControlled)) {
 			userControlled = true;
 		}
-		else if (event.code === 'KeyN') {
+		else if ((event.code === 'KeyN')&&(userControlled)) {
 			toggleCubeMapTexture(activeSkybox === 0 ? 1 : 0);
 		}
 	});
