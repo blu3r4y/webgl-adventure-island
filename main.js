@@ -128,7 +128,7 @@ function init(resources) {
 
 	// make it day immediatly - debug
 	//userControlled = true;
-	animateCrystal = true; userControlled = true;
+	//animateCrystal = true; userControlled = true;
 }
 
 function createWaterSceneGraph(gl, resources) {
