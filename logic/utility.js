@@ -17,6 +17,19 @@ function isInsideCircle(circleX, circleZ, x, z, radius) {
 	return distSq <= radiusSq;
 }
 
+function hasWindowResized(gl) {
+	// remember current buffer sizes
+	var width = gl.drawingBufferWidth;
+	var height = gl.drawingBufferHeight;
+
+	// refresh them
+	checkForWindowResize(gl);
+
+	// return if the changed
+	return (gl.drawingBufferWidth != width ||
+		gl.drawingBufferHeight != height);
+}
+
 // fps measurement - taken from http://stackoverflow.com/a/16432859
 function measureFps() {
 	var now = new Date().getTime();

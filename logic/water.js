@@ -13,7 +13,7 @@ var reflectionColorTex;
 var reflectionDepthBuf;
 
 var refractionColorTex;
-var refractionDepthTex;
+var refractionDepthBuf;
 
 const waterHeight = -1;
 
@@ -69,7 +69,7 @@ function initRenderToTexture() {
 	//
 	//
 	// REFRACTION
-	// framebuffer + color buffer texture attachment + depth buffer texture attachment
+	// framebuffer + color buffer texture attachment + depth render buffer attachment
 
 	//generate color texture (required mainly for debugging and to avoid bugs in some WebGL platforms)
 	refractionFrameBuf = gl.createFramebuffer();
@@ -88,18 +88,75 @@ function initRenderToTexture() {
 	// bind textures to framebuffer
 	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, refractionColorTex, 0);
 
-	// create depth texture
-	refractionDepthTex = gl.createTexture();
-	gl.activeTexture(gl.TEXTURE0 + refractionDepthTexUnit);
-	gl.bindTexture(gl.TEXTURE_2D, refractionDepthTex);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, frameBufferWidth, frameBufferHeight, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null);
+	// create depth buffer renderbuffer
+	refractionDepthBuf = gl.createRenderbuffer();
+	gl.bindRenderbuffer(gl.RENDERBUFFER, refractionDepthBuf);
+	gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, frameBufferWidth, frameBufferHeight);
+	gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, refractionDepthBuf);
+
+	if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
+		alert('Framebuffer incomplete. Can not render water.');
+	}
+
+	// clean up
+	gl.bindTexture(gl.TEXTURE_2D, null);
+	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+}
+
+function updateFrameBufferSize()
+{
+	frameBufferWidth = gl.drawingBufferWidth / waterResolution;
+	frameBufferHeight = gl.drawingBufferHeight / waterResolution;
+
+	//
+	//
+	//
+	// REFLECTION
+	// framebuffer + color buffer texture attachment + depth render buffer attachment
+
+	//generate color texture (required mainly for debugging and to avoid bugs in some WebGL platforms)
+	gl.bindFramebuffer(gl.FRAMEBUFFER, reflectionFrameBuf);
+
+	// create color texture
+	gl.activeTexture(gl.TEXTURE0 + reflectionColorTexUnit);
+	gl.bindTexture(gl.TEXTURE_2D, reflectionColorTex);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, frameBufferWidth, frameBufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
 
 	// bind textures to framebuffer
-	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, refractionDepthTex, 0);
+	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, reflectionColorTex, 0);
+
+	// create depth buffer renderbuffer
+	gl.bindRenderbuffer(gl.RENDERBUFFER, reflectionDepthBuf);
+	gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, frameBufferWidth, frameBufferHeight);
+
+	if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
+		alert('Framebuffer incomplete. Can not render water.');
+	}
+
+	// clean up
+	gl.bindTexture(gl.TEXTURE_2D, null);
+	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+	//
+	//
+	//
+	// REFRACTION
+	// framebuffer + color buffer texture attachment + depth render buffer attachment
+
+	//generate color texture (required mainly for debugging and to avoid bugs in some WebGL platforms)
+	gl.bindFramebuffer(gl.FRAMEBUFFER, refractionFrameBuf);
+
+	// create color texture
+	gl.activeTexture(gl.TEXTURE0 + refractionColorTexUnit);
+	gl.bindTexture(gl.TEXTURE_2D, refractionColorTex);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, frameBufferWidth, frameBufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+	// bind textures to framebuffer
+	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, refractionColorTex, 0);
+
+	// create depth buffer renderbuffer
+	gl.bindRenderbuffer(gl.RENDERBUFFER, refractionDepthBuf);
+	gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, frameBufferWidth, frameBufferHeight);
 
 	if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
 		alert('Framebuffer incomplete. Can not render water.');
@@ -111,9 +168,12 @@ function initRenderToTexture() {
 }
 
 //draw scene for shadow map
-function renderWater(timeInMilliseconds) {
+function renderWater(timeInMilliseconds, windowGotResized) {
 
 	clippingNodes.forEach(function (c) { return c.enableClipping = 1; });
+
+	// re-init
+	if (windowGotResized) updateFrameBufferSize();
 
 	renderRefraction(timeInMilliseconds);
 	renderReflection(timeInMilliseconds);

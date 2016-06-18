@@ -42,7 +42,6 @@ var crystalLight = new LightTransformationPair();
 const skyboxTexUnit = 2;
 const reflectionColorTexUnit = 3;
 const refractionColorTexUnit = 4;
-const refractionDepthTexUnit = 5;
 
 // other constants
 
@@ -519,7 +518,7 @@ function makeBillboardRenderObject(width, height) {
  */
 
 function render(timeInMilliseconds) {
-	checkForWindowResize(gl);
+	let windowGotResized = hasWindowResized(gl);
 
 	// update animations
 	renderAnimations(timeInMilliseconds);
@@ -528,7 +527,7 @@ function render(timeInMilliseconds) {
 	renderInput(timeInMilliseconds);
 
 	// render water textures
-	renderWater(timeInMilliseconds);
+	renderWater(timeInMilliseconds, windowGotResized);
 
 	// render opaque and transparent objects
 	renderScene(timeInMilliseconds);
