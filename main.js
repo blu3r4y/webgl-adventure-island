@@ -144,12 +144,12 @@ function createWaterSceneGraph(gl, resources) {
 
 function createTransparentSceneGraph(gl, resources) {
 
-	let transparentRoot = new SGNode();
+	let transparentRoot = new TransparencySGNode();
 
 	function createBillboard(gl, resources, x, y, z, scale, resource) {
 		let materialNode = new MaterialSGNode(
 			new NiceTextureSGNode(resource, 1.0,
-				new RenderSGNode(makeBillboardRenderObject(2.0, 2.0))));
+				new TransparentRenderSGNode(makeBillboardRenderObject(2.0, 2.0))));
 
 		materialNode.specular = [0.1, 0.2, 0.15, 0.];
 		materialNode.shininess = 0.5;
@@ -300,19 +300,6 @@ function makeCrystalLight(gl, resources) {
 }
 
 function setSpotLightDirection() {
-
-	/*let lookAtHorizont = vec3.sub(vec3.fromValues(1.0, 1.0, 1.0), vec3.fromValues(camera.istPos.x, camera.istPos.y, lookAtZ),
-		vec3.fromValues(camera.istPos.x, camera.istPos.y, camera.istPos.z));
-
-	let mouseRotateMatrix = mat4.multiply(mat4.create(),
-		glm.rotateX(camera.istRotation.y),
-		glm.rotateY(camera.istRotation.x));
-
-	let lookAt = mat4.multiply(vec3.create(),
-		mouseRotateMatrix,
-		vec4.fromValues(lookAtHorizont[0], lookAtHorizont[1], lookAtHorizont[2], 1.0));
-
-	spotLight.light.direction = lookAt;*/
 	spotLight.light.direction = [
 		-Math.sin(deg2rad(vehicleData.rotation.z)),
 		0,
