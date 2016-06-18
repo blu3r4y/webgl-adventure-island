@@ -47,6 +47,7 @@ const refractionColorTexUnit = 4;
 
 const crystalScale = 0.025;
 var lastSampleTime = 0;
+var lastTimeInMilliseconds = 0;
 
 // load the resources
 loadResources({
@@ -495,13 +496,14 @@ function makeBillboardRenderObject(width, height) {
  */
 
 function render(timeInMilliseconds) {
+	let deltaInMilliseonds = timeInMilliseconds - lastTimeInMilliseconds;
 	let windowGotResized = hasWindowResized(gl);
 
 	// update animations
-	renderAnimations(timeInMilliseconds);
+	renderAnimations(timeInMilliseconds, deltaInMilliseonds);
 
 	// check input
-	renderInput(timeInMilliseconds);
+	renderInput(timeInMilliseconds, deltaInMilliseonds);
 
 	// render water textures
 	renderWater(timeInMilliseconds, windowGotResized);
@@ -512,6 +514,8 @@ function render(timeInMilliseconds) {
 	// trace and next frame
 	measureFps();
 	requestAnimationFrame(render);
+
+	lastTimeInMilliseconds = timeInMilliseconds;
 }
 
 function renderScene(timeInMilliseconds) {
@@ -544,13 +548,13 @@ function renderScene(timeInMilliseconds) {
 	rootTransparent.render(context);
 }
 
-function renderInput(timeInMilliseconds) {
+function renderInput(timeInMilliseconds, deltaInMilliseonds) {
 	// advance camera position
-	cameraControlLoop();
+	cameraControlLoop(deltaInMilliseonds);
 
 	// sample mouse and keyboard input every 10 milliseconds
 	if ((timeInMilliseconds - lastSampleTime) > 10) {
-		sampleInputs();
+		sampleInputs(deltaInMilliseonds);
 		lastSampleTime = timeInMilliseconds;
 	}
 }

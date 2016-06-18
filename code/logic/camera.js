@@ -27,7 +27,7 @@ var keyMap = [];
 
 var invertedCamera = false;
 var userControlled = false;
-var zoom = 0.2;
+var zoom = 0.0125;
 
 
 const lookAtZ = 40;
@@ -109,54 +109,54 @@ function initInteraction(canvas) {
 
 }
 
-function moveUp() {
-	move(0., 0., 1.);
+function moveUp(deltaInMilliseonds) {
+	move(0., 0., 1., deltaInMilliseonds);
 }
 
-function moveDown() {
-	move(0., 0., -1.);
+function moveDown(deltaInMilliseonds) {
+	move(0., 0., -1., deltaInMilliseonds);
 }
 
-function moveForward() {
+function moveForward(deltaInMilliseonds) {
 	let zpart = -Math.cos(deg2rad(camera.sollRotation.x));
 	let xpart = Math.sin(deg2rad(camera.sollRotation.x));
 	let ypart = -Math.sin(deg2rad(camera.sollRotation.y));
-	move(zpart, xpart, ypart);
+	move(zpart, xpart, ypart, deltaInMilliseonds);
 }
 
-function moveBackwards() {
+function moveBackwards(deltaInMilliseonds) {
 	let zpart = Math.cos(deg2rad(camera.sollRotation.x));
 	let xpart = -Math.sin(deg2rad(camera.sollRotation.x));
 	let ypart = Math.sin(deg2rad(camera.sollRotation.y));
-	move(zpart, xpart, ypart);
+	move(zpart, xpart, ypart, deltaInMilliseonds);
 }
 
-function moveRight() {
+function moveRight(deltaInMilliseonds) {
 	let zpart = Math.sin(deg2rad(camera.sollRotation.x));
 	let xpart = Math.cos(deg2rad(camera.sollRotation.x));
-	move(zpart, xpart, 0.);
+	move(zpart, xpart, 0., deltaInMilliseonds);
 }
 
-function moveLeft() {
+function moveLeft(deltaInMilliseonds) {
 	let zpart = -Math.sin(deg2rad(camera.sollRotation.x));
 	let xpart = -Math.cos(deg2rad(camera.sollRotation.x));
-	move(zpart, xpart, 0.);
+	move(zpart, xpart, 0., deltaInMilliseonds);
 }
 
-function move(zpart, xpart, ypart) {
-	camera.sollPos.z = camera.sollPos.z + zoom * zpart;
+function move(zpart, xpart, ypart, deltaInMilliseonds) {
+	camera.sollPos.z = camera.sollPos.z + zoom * deltaInMilliseonds * zpart;
 	if (camera.sollPos.z > lookAtZ) {
 		camera.sollPos.z = lookAtZ + 0.01;
 	}
-	camera.sollPos.x = camera.sollPos.x + zoom * xpart;
-	camera.sollPos.y = camera.sollPos.y + zoom * ypart;
+	camera.sollPos.x = camera.sollPos.x + zoom * deltaInMilliseonds * xpart;
+	camera.sollPos.y = camera.sollPos.y + zoom * deltaInMilliseonds * ypart;
 	//console.log("z :" + camera.sollPos.z, "x :" + camera.sollPos.x);
 }
 
 // advances the cameras ist position towards the soll position
-function cameraControlLoop() {
-	let c = 0.1;
-	let r = 0.14;
+function cameraControlLoop(deltaInMilliseonds) {
+	let c = 0.00625 * deltaInMilliseonds;
+	let r = 0.00875 * deltaInMilliseonds;
 
 	camera.istPos.x += diffValueController(camera.istPos.x, camera.sollPos.x, c);
 	camera.istPos.y += diffValueController(camera.istPos.y, camera.sollPos.y, c);
@@ -192,26 +192,26 @@ function rotDiffValueController(src, dest, k) {
 	return 0;
 }
 
-function sampleInputs() {
+function sampleInputs(deltaInMilliseonds) {
 	if (userControlled) {
 		//https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent
 		if (keyMap['ArrowUp'] || keyMap['KeyW']) {
-			moveForward();
+			moveForward(deltaInMilliseonds);
 		}
 		else if (keyMap['ArrowDown'] || keyMap['KeyS']) {
-			moveBackwards();
+			moveBackwards(deltaInMilliseonds);
 		}
 		if (keyMap['ArrowRight'] || keyMap['KeyD']) {
-			moveRight();
+			moveRight(deltaInMilliseonds);
 		}
 		else if (keyMap['ArrowLeft'] || keyMap['KeyA']) {
-			moveLeft();
+			moveLeft(deltaInMilliseonds);
 		}
 		if (keyMap['KeyQ']) {
-			moveUp();
+			moveUp(deltaInMilliseonds);
 		}
 		else if (keyMap['KeyE']) {
-			moveDown();
+			moveDown(deltaInMilliseonds);
 		}
 	}
 }

@@ -53,7 +53,7 @@ var state = 0;
 
 var lastStateTime = 0;
 
-function renderAnimations(timeInMilliseconds)
+function renderAnimations(timeInMilliseconds, deltaInMilliseonds)
 {
 	let rotationFactor = 0.1;
 	let circles = 3;
@@ -61,7 +61,7 @@ function renderAnimations(timeInMilliseconds)
 	switch (state) {
 		case 0: //First camera flight
 			if (!userControlled && camera.istPos.z < -17) {
-				moveForward();
+				moveForward(20);
 			}
 			if(timeInMilliseconds > 5000) {
 				state++;
