@@ -210,10 +210,9 @@ function createSceneGraph(gl, resources) {
 
 	// island
 	let islandNode = makeIslandPlane(gl, resources);
+	islandNode.append(spotLight.light);
 	objectRoot.append(islandNode);
 	objectRoot.append(makeIslandBody(gl, resources));
-
-
 
 	// crystal
 	islandNode.append(makeCrystal(gl, resources));
