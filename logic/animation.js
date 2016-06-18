@@ -55,146 +55,156 @@ var lastStateTime = 0;
 
 function renderAnimations(timeInMilliseconds)
 {
-	var vehicleDone;
 	let rotationFactor = 0.1;
 	let circles = 3;
 
-	if (vehicleData.animation) {
-		vehicleDone = vehicleControlLoop();
-		if (vehicleDone) {
-			nextPos++;
-			if (nextPos < vehiclePositions.length) {
-				vehicleData.destPos.x = vehiclePositions[nextPos][0];
-				vehicleData.destPos.y = vehiclePositions[nextPos][1];
-				vehicleData.destPos.z = vehiclePositions[nextPos][2];
+	switch (state) {
+		case 0: //First camera flight
+			if (!userControlled && camera.istPos.z < -17) {
+				moveForward();
 			}
-			vehicleData.animation = false;
-		}
-	}
-
-	if (!userControlled) {//only show the movie when not in user-mode
-		switch (state) {
-			case 0: //First camera flight
-				if (camera.istPos.z < -17) {
-					moveForward();
+			if(timeInMilliseconds > 5000) {
+				state++;
+				lastStateTime = timeInMilliseconds;
+			}
+			break;
+		case 1://Vehicle rises from water
+			if(timeInMilliseconds - lastStateTime < 1500){
+				moveVehicle(lastStateTime + 1500 - timeInMilliseconds)
+			}
+			else{
+				state++;
+				lastStateTime = timeInMilliseconds;
+				spotLight.light.ambient = [0.1, 0.1, 0.1, 1];
+				spotLight.light.diffuse = [1, 1, 1, 1];
+				spotLight.light.specular = [1, 1, 1, 1];
+				nextPos++;
+				if (nextPos < vehiclePositions.length) {
+					vehicleData.destPos.x = vehiclePositions[nextPos][0];
+					vehicleData.destPos.y = vehiclePositions[nextPos][1];
+					vehicleData.destPos.z = vehiclePositions[nextPos][2];
 				}
-				else {
-					state++;
-					lastStateTime = timeInMilliseconds;
+			}
+			break;
+		case 2://vehicle moves to the left
+			if(timeInMilliseconds - lastStateTime < 2000){
+				moveVehicle(lastStateTime + 2000 - timeInMilliseconds)
+			}
+			else{
+				state++;
+				lastStateTime = timeInMilliseconds;
+				nextPos++;
+				if (nextPos < vehiclePositions.length) {
+					vehicleData.destPos.x = vehiclePositions[nextPos][0];
+					vehicleData.destPos.y = vehiclePositions[nextPos][1];
+					vehicleData.destPos.z = vehiclePositions[nextPos][2];
 				}
-				break;
-			case 1://Vehicle rises from water
-				if (timeInMilliseconds - lastStateTime > 1000) {
-					vehicleData.animation = true;
+			}
+			break;
+		case 3:
+			if (vehicleData.rotation.z > 180) {
+				vehicleData.rotation.z -= 1;
+			}
+			if(timeInMilliseconds - lastStateTime > 3000){
+				state++;
+				lastStateTime = timeInMilliseconds;
+			}
+			break;
+		case 4:
+			if(!userControlled) followVehicle(5);
+			if(timeInMilliseconds - lastStateTime < 2500){
+				moveVehicle(lastStateTime + 2500 - timeInMilliseconds)
+			}
+			else{
+				state++;
+				lastStateTime = timeInMilliseconds;
+				nextPos++;
+				if (nextPos < vehiclePositions.length) {
+					vehicleData.destPos.x = vehiclePositions[nextPos][0];
+					vehicleData.destPos.y = vehiclePositions[nextPos][1];
+					vehicleData.destPos.z = vehiclePositions[nextPos][2];
 				}
-				if (vehicleDone) {
-					state++;
-					lastStateTime = timeInMilliseconds;
-					spotLight.light.ambient = [0.1, 0.1, 0.1, 1];
-					spotLight.light.diffuse = [1, 1, 1, 1];
-					spotLight.light.specular = [1, 1, 1, 1];
-					vehicleData.animation = false;
-				}
-				break;
-			case 2:
-				if (timeInMilliseconds - lastStateTime > 500) {
-					vehicleData.animation = true;
-				}
-				if (vehicleDone) {
-					camera.sollPos.x = vehicleData.isPos.x;
-					state++;
-					lastStateTime = timeInMilliseconds;
-					vehicleData.animation = false;
-				}
-				break;
-			case 3:
-				if (vehicleData.rotation.z > 180) {
-					vehicleData.rotation.z -= 1;
-				}
-				else {
-					state++;
-					lastStateTime = timeInMilliseconds;
-				}
-				break;
-			case 4:
-				vehicleData.animation = true;
-				followVehicle(5);
-				if (vehicleDone) {
-					state++;
-					lastStateTime = timeInMilliseconds;
-					vehicleData.animation = false;
-				}
-				break;
-			case 5:
-				if (timeInMilliseconds - lastStateTime > 1500) {
-					followVehicle(7);
-					state++;
-					lastStateTime = timeInMilliseconds;
-				}
-				break;
-			case 6:
-				if (timeInMilliseconds - animationCrabStart > 360 / rotationFactor * (circles-1)) {
-					state++;
-				}
-				break;
-			case 7:
-				if (vehicleData.rotation.z > 135) {
-					vehicleData.rotation.z -= 1;
-				}
-				else {
-					state++;
-					lastStateTime = timeInMilliseconds;
+			}
+			break;
+		case 5:
+			if (timeInMilliseconds - lastStateTime > 1500) {
+				if(!userControlled) followVehicle(7);
+				state++;
+				lastStateTime = timeInMilliseconds;
+			}
+			break;
+		case 6://vehicle stares at crab
+			if (timeInMilliseconds - lastStateTime > 5000) {
+				state++;
+				lastStateTime = timeInMilliseconds;
+			}
+			break;
+		case 7:
+			if (vehicleData.rotation.z > 135) {
+				vehicleData.rotation.z -= 1;
+			}
+			if(timeInMilliseconds - lastStateTime > 1500){
+				state++;
+				lastStateTime = timeInMilliseconds;
+				if(!userControlled){
 					camera.sollRotation.x = 225;
 					camera.sollPos.x = 14.5;
 					camera.sollPos.z = -4.5;
 				}
-				break;
-			case 8:
-				vehicleData.animation = true;
-				followVehicle(5);
-				if (vehicleDone) {
-					state++;
-					vehicleData.animation = false;
-					lastStateTime = timeInMilliseconds;
+			}
+			break;
+		case 8:
+			if(!userControlled) followVehicle(5);
+			if(timeInMilliseconds - lastStateTime < 2500){
+				moveVehicle(lastStateTime + 2500 - timeInMilliseconds)
+			}
+			else{
+				state++;
+				lastStateTime = timeInMilliseconds;
+				nextPos++;
+				if (nextPos < vehiclePositions.length) {
+					vehicleData.destPos.x = vehiclePositions[nextPos][0];
+					vehicleData.destPos.y = vehiclePositions[nextPos][1];
+					vehicleData.destPos.z = vehiclePositions[nextPos][2];
 				}
-				break;
-			case 9:
-				if (timeInMilliseconds - lastStateTime > 500) {
-					followVehicle(7);
-					state++;
-					lastStateTime = timeInMilliseconds;
+			}
+			break;
+		case 9:
+			if (timeInMilliseconds - lastStateTime > 500) {
+				followVehicle(7);
+				state++;
+				lastStateTime = timeInMilliseconds;
+			}
+			break;
+		case 10:
+			if(crystalData.pos.y > (crystalHeight/4) / crystalScale){
+				spotLight.light.ambient = [0, 0, 0, 1];
+				spotLight.light.diffuse = [0, 0, 0, 1];
+				spotLight.light.specular = [0, 0, 0, 1];
+				if(!userControlled) followVehicle(14);
+				state++;
+				lastStateTime = timeInMilliseconds;
+			}
+			break;
+		case 11:
+			if(timeInMilliseconds > 30000){
+				state++;
+				lastStateTime = timeInMilliseconds;
+				if(animateCrystal) {
+					animateCrystal = false;
+					crystalLight.light.ambient = [0.5, 0.5, 0.5, 1];
+					toggleCubeMapTexture(activeSkybox === 0 ? 1 : 0);
 				}
-				break;
-			case 10:
-				if(crystalData.pos.y > (crystalHeight/4) / crystalScale){
-					spotLight.light.ambient = [0, 0, 0, 1];
-					spotLight.light.diffuse = [0, 0, 0, 1];
-					spotLight.light.specular = [0, 0, 0, 1];
-					followVehicle(12);
-					state++;
-					lastStateTime = timeInMilliseconds;
-				}
-				break;
-			case 11:
-				if(crystalData.pos.y > crystalHeight / crystalScale){
-					state++;
-					lastStateTime = timeInMilliseconds;
-				}
-				break;
-			case 12:
-				if(timeInMilliseconds < 30000){
-					moveBackwards();
-				}
-				else{
-					state++;
-				}
-				break;
-			default: //We're done with the movie, swith to user mode
-				userControlled = true;
-				console.log("Time elapsed: " + timeInMilliseconds);
-				console.log("x" + camera.sollPos.x, "y" + camera.sollPos.y, "z" + camera.sollPos.z);
-				break;
-		}
+			}
+			break;
+		case 12:	//We're done with the movie, swith to user mode
+			userControlled = true;
+			console.log("Time elapsed: " + timeInMilliseconds);
+			console.log("x" + camera.sollPos.x, "y" + camera.sollPos.y, "z" + camera.sollPos.z);
+			state++;
+			break;
+		default:
+			break;
 	}
 
 	//check whether camera is close enough to toggle stone animation
@@ -288,17 +298,31 @@ function followVehicle(distance) {
 	camera.sollPos.z = vehicleData.isPos.z - distance * zpart;
 }
 
-function vehicleControlLoop() {
-	let c = 0.05;
+function moveVehicle(remainingTime) {
 
-	let x = diffValueController(vehicleData.isPos.x, vehicleData.destPos.x, c);
-	let y = diffValueController(vehicleData.isPos.y, vehicleData.destPos.y, c);
-	let z = diffValueController(vehicleData.isPos.z, vehicleData.destPos.z, c);
+	//console.log(remainingTime);
 
-	vehicleData.isPos.x += x;
-	vehicleData.isPos.y += y;
-	vehicleData.isPos.z += z;
+	let x = vehicleData.destPos.x - vehicleData.isPos.x;
+	let y = vehicleData.destPos.y - vehicleData.isPos.y;
+	let z = vehicleData.destPos.z - vehicleData.isPos.z;
+
+	let deltaX = Math.abs(x / remainingTime);
+	let deltaY = Math.abs(y / remainingTime);
+	let deltaZ = Math.abs(z / remainingTime);
+
+	if(deltaX > 0 && deltaX < 0.05){
+		deltaX = 0.05;
+	}
+	if(deltaY > 0 && deltaY < 0.05){
+		deltaY = 0.05;
+	}
+	if(deltaZ > 0 && deltaZ < 0.05){
+		deltaZ = 0.05;
+	}
+
+	vehicleData.isPos.x += diffValueController(vehicleData.isPos.x, vehicleData.destPos.x, deltaX);
+	vehicleData.isPos.y += diffValueController(vehicleData.isPos.y, vehicleData.destPos.y, deltaY);
+	vehicleData.isPos.z += diffValueController(vehicleData.isPos.z, vehicleData.destPos.z, deltaZ);
 	//console.log("Vehicle: x: " + vehicleData.isPos.x, "z: " + vehicleData.isPos.z);
-	return ((x == 0) && (y == 0) && (z == 0));
 
 }

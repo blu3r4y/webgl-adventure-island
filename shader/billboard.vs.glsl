@@ -22,7 +22,11 @@ varying vec2 v_texCoord;
 varying vec3 v_normal;
 
 void main() {
-	vec4 eyePosition = u_modelView * vec4(a_position,1);
+	vec4 rotationY = u_modelView[1] * a_position.y;
+	//nomal eye position
+	//vec4 eyePosition = u_modelView * vec4(a_position, 1.0);
+	//"Adapted" eyeposition
+	vec4 eyePosition = u_modelView * vec4(0.0,0.0,0.0,1.0) + vec4(a_position.x, 0.0, a_position.z, 0.0) + rotationY;
 
 	v_position = a_position;
 
@@ -38,6 +42,6 @@ void main() {
 
 	v_texCoord = a_texCoord;
 
-	vec4 rotationY = u_modelView[1] * a_position.y;
+
 	gl_Position =  u_projection * (u_modelView * vec4(0.0,0.0,0.0,1.0) + vec4(a_position.x, 0.0, a_position.z, 0.0) + rotationY);
 }
