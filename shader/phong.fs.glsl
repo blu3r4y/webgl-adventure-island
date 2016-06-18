@@ -73,13 +73,15 @@ vec4 spotLight(Light light, Material material, vec3 lightVec, vec3 dirVec, vec3 
 	float insideCone = dot(-lightVec, dirVec);
 
 	// https://www.desmos.com/calculator/nmnaud1hrw
-	float a = 0.2;
-	float b = 0.01;
+	float a = 9.0;
+	float b = 0.05;
 
 	vec4 c_spot = vec4(0.0, 0.0, 0.0, 1.0);
 
 	// cone degree
-    if (degrees(acos(insideCone)) < 35.0) {
+	float deg = degrees(acos(insideCone));
+    if (deg < 35.0) {
+    	a = a * pow(deg/35.0, 5.0);
     	// check if some fragment faces exactly against the light source
 		float hardShadow = dot(lightVec, normalVecStatic);
 		// calculate light attenuation
