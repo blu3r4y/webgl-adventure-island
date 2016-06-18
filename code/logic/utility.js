@@ -9,6 +9,12 @@ function deg2rad(degrees) {
 	return degrees * Math.PI / 180;
 }
 
+function changeInfoBoxTheme(type)
+{
+	if (type === 0) document.getElementById("info-div").className = "noselect light";
+	else document.getElementById("info-div").className = "noselect dark";
+}
+
 function isInsideCircle(circleX, circleZ, x, z, radius) {
 	let dx = circleX - x;
 	let dz = circleZ - z;
