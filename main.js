@@ -434,6 +434,8 @@ function makeCrab(gl, resources) {
 	crabMaterial.specular = [1, 0.555802, 0.666065, 1];
 	crabMaterial.shininess = 0.5;
 
+
+
 	crabNode = new TransformationSGNode(glm.transform({translate: [-2, 0, 0], rotateY: 90}),
 		new TransformationSGNode(glm.transform({translate: [0, 0, 2], rotateY: 270}),
 			crabMaterial));
