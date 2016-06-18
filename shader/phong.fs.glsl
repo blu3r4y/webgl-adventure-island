@@ -80,23 +80,24 @@ vec4 spotLight(Light light, Material material, vec3 lightVec, vec3 dirVec, vec3 
 
 	// cone degree
 	float deg = degrees(acos(insideCone));
+	float spot = 0.0;
     if (deg < 35.0) {
     	a = a * pow(deg/35.0, 5.0);
     	// check if some fragment faces exactly against the light source
 		float hardShadow = dot(lightVec, normalVecStatic);
 		// calculate light attenuation
-		float spot = 1.0 / (1.0 + a * distance + b * distance * distance);
+		spot = clamp(1.0 / (1.0 + a * distance + b * distance * distance), 0.0, 1.0);
+		// check simple hard shadow based on surface normals
+		if (hardShadow < 0.0) spot = 0.0;
 		// target color
 		c_spot = clamp(spot * light.diffuse * material.diffuse, 0.0, 1.0);
-		// check simple hard shadow based on surface normals
-		if (hardShadow < 0.0) c_spot *= 0.0;
 	}
 
 	vec4 c_amb  = clamp(light.ambient * material.ambient, 0.0, 1.0);
 	vec4 c_spec = clamp(spec * light.specular * material.specular, 0.0, 1.0);
 	vec4 c_em   = material.emission;
 
-	return c_amb + c_spot + c_spec + c_em;
+	return mix(c_spot, c_amb + c_spec + c_em, spot);
 }
 
 void main()
