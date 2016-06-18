@@ -1,11 +1,13 @@
 body {
 	background-color: beige;
 	font-family: sans-serif;
+	overflow: hidden;
+	margin: 0;
 }
 
 canvas {
-	width: 98vw;
-	height: 98vh;
+	width: 100vw;
+	height: 100vh;
 	padding-left: 0;
 	padding-right: 0;
 	margin-left: auto;
@@ -14,8 +16,8 @@ canvas {
 }
 .info-div {
 	position: absolute;
-	top: 1vh;
-	right: 1vw;
+	top: 5px;
+	right: 5px;
 	margin: 5px;
 	padding: 5px;
 	font-size: 8pt;
