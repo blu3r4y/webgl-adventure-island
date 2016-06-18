@@ -68,7 +68,7 @@ vec4 simpleLight(Light light, Material material, vec3 lightVec, vec3 normalVec, 
 	vec4 c_spec = clamp(spec * light.specular * material.specular, 0.0, 1.0);
 	vec4 c_em   = material.emission;
 
-	return c_amb + c_diff + c_spec + c_em;
+	return vec4((c_amb + c_diff + c_spec + c_em).xyz, textureColor.a);
 }
 
 vec4 spotLight(Light light, Material material, vec3 lightVec, vec3 dirVec, vec3 normalVec, vec3 normalVecStatic, vec3 eyeVec, vec4 textureColor)
@@ -118,17 +118,12 @@ vec4 spotLight(Light light, Material material, vec3 lightVec, vec3 dirVec, vec3 
 	vec4 c_spec = clamp(spec * light.specular * material.specular, 0.0, 1.0);
 	vec4 c_em   = material.emission;
 
-	return mix(c_spot, c_amb + c_spec + c_em, spot);
+	return vec4((mix(c_spot, c_amb + c_spec + c_em, spot)).xyz, textureColor.a);
 }
 
 void main (void) {
 	vec4 textureColor = texture2D(u_tex, v_texCoord);
 
-	if (textureColor.a < 0.5) {
-		gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
-	}
-	else {
-		gl_FragColor = simpleLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec, textureColor)
-			+ spotLight(u_lightSpot, u_material, v_lightSpotVec, u_lightSpotDir, v_normalVec, v_normal, v_eyeVec, textureColor);
-	}
+	gl_FragColor = simpleLight(u_light, u_material, v_lightVec, v_normalVec, v_eyeVec, textureColor);
+		+ spotLight(u_lightSpot, u_material, v_lightSpotVec, u_lightSpotDir, v_normalVec, v_normal, v_eyeVec, textureColor);
 }
