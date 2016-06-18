@@ -49,30 +49,36 @@ function initInteraction(canvas) {
 	}
 
 	canvas.addEventListener('mousedown', function (event) {
-		mouse.pos = toPos(event);
-		mouse.leftButtonDown = event.button === 0;
+		if(userControlled){
+			mouse.pos = toPos(event);
+			mouse.leftButtonDown = event.button === 0;
+		}
 	});
 	canvas.addEventListener('mousemove', function (event) {
-		const pos = toPos(event);
-		const delta = {
-			x: mouse.pos.x - pos.x,
-			y: invertedCamera ? mouse.pos.y - pos.y : pos.y - mouse.pos.y
-		};
-		if (mouse.leftButtonDown) {
-			//add the relative movement of the mouse to the sollRotation variables
-			camera.sollRotation.x = getDegrees(camera.sollRotation.x - delta.x);
-			setSpotLightDirection();
-			let ang = getDegrees(camera.sollRotation.y - delta.y);
-			if (ang > 100 && ang < 260) {
-				camera.sollRotation.y = ang;
+		if(userControlled){
+			const pos = toPos(event);
+			const delta = {
+				x: mouse.pos.x - pos.x,
+				y: invertedCamera ? mouse.pos.y - pos.y : pos.y - mouse.pos.y
+			};
+			if (mouse.leftButtonDown) {
+				//add the relative movement of the mouse to the sollRotation variables
+				camera.sollRotation.x = getDegrees(camera.sollRotation.x - delta.x);
+				setSpotLightDirection();
+				let ang = getDegrees(camera.sollRotation.y - delta.y);
+				if (ang > 100 && ang < 260) {
+					camera.sollRotation.y = ang;
+				}
+				//console.log("x: " + camera.sollRotation.x, "y: " + camera.sollRotation.y, "z: " + -Math.cos(deg2rad(camera.sollRotation.x)), "x: " + -Math.sin(deg2rad(camera.sollRotation.x)));
 			}
-			//console.log("x: " + camera.sollRotation.x, "y: " + camera.sollRotation.y, "z: " + -Math.cos(deg2rad(camera.sollRotation.x)), "x: " + -Math.sin(deg2rad(camera.sollRotation.x)));
+			mouse.pos = pos;
 		}
-		mouse.pos = pos;
 	});
 	canvas.addEventListener('mouseup', function (event) {
-		mouse.pos = toPos(event);
-		mouse.leftButtonDown = false;
+		if(userControlled){
+			mouse.pos = toPos(event);
+			mouse.leftButtonDown = false;
+		}
 	});
 	//register globally
 	document.addEventListener('keypress', function (event) {
