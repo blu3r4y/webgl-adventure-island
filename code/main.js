@@ -81,7 +81,7 @@ loadResources({
 	tex_grassBill: 'models/vegetation/grass.png',
 	tex_dry: 'models/island/texture/dry.jpg',
 	tex_rock: 'models/stone/texture/stone.jpg',
-	tex_dudv: 'models/water/dudv.jpg',
+	tex_dudv: 'models/other/dudv.jpg',
 	tex_test: 'models/other/test.jpg',
 	tex_ice: 'models/other/ice.jpg',
 
