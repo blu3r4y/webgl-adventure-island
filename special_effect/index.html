@@ -15,21 +15,132 @@
 			  font-family: sans-serif;
 			  margin: 40px;
 		  }
+		  .top {
+			  font-size: 8pt;
+		  }
+		  a:link {
+			  text-decoration: none;
+			  font-style: italic;
+		  }
+		  a:visited {
+			  text-decoration: none;
+			  font-style: italic;
+		  }
+		  a:hover {
+			  color: orangered !important;
+			  font-weight: bold;
+			  text-decoration: none;
+		  }
+		  a:active {
+			  color: orangered !important;
+			  font-weight: bold;
+			  text-decoration: none;
+		  }
 	  </style>
   </head>
   <body>
-  		<h1>Adventure Island Basic Effects</h1>
 
-			<h2>Scene graph elements</h2>
-			<h2>Materials</h2>
-			<h2>Texturing</h2>
-			<h2>Illumination</h2>
-			<h2>Transparency</h2>
-			<h2>Camera</h2>
+  <p><a href="../code/index.html">Back</a></p>
+  <ul>
+	  <li><a href="#basic">Basic effects</a>
+	  <li style="list-style-type:none">
+		  <ul>
+			  <li><a href="#scene-graph">Scene graph elements</a></li>
+			  <li><a href="#materials">Materials</a></li>
+			  <li><a href="#texturing">Texturing</a></li>
+			  <li><a href="#illumination">Illumination</a></li>
+			  <li><a href="#transparency">Transparency</a></li>
+			  <li><a href="#camera">Camera</a></li>
+		  </ul>
+	  </li>
+	  <li><a href="#special">Special effects description</a></li>
+	  <li style="list-style-type:none">
+		  <ul>
+			  <li><a href="#water">Water surface</a></li>
+			  <li style="list-style-type:none">
+				  <ul>
+					  <li><a href="#water1">Rendering the reflection and refraction onto textures</a></li>
+					  <li><a href="#water2">Clipping</a></li>
+					  <li><a href="#water3">Projective texture mapping</a></li>
+					  <li><a href="#water4">Distortion effects</a></li>
+					  <li><a href="#water5">Fresnel effect</a></li>
+				  </ul>
+			  </li>
+			  <li><a href="#billboards">Billboards</a></li>
+			  <li style="list-style-type:none">
+				  <ul>
+					  <li><a href="#billboards1">Orthogonal billboards</a></li>
+					  <li><a href="#billboards2">Orthogonal billboards in the XZ plane</a></li>
+				  </ul>
+			  </li>
+	  	</ul>
+	  </li>
+  </ul>
 
-		<h1>Adventure Island Special Effects</h1>
+  		<h1 id="basic">Basic effects description <a href="#" class="top">Go to top</a></h1>
 
-		<h2>Water surface</h2>
+			<h2 id="scene-graph">Scene graph elements <a href="#" class="top">Go to top</a></h2>
+		<p>The car consist of multiple parts (body, moving triangle on top, spotlight) where the triangle rotates independently on top of it. Furthermore the crab moves around the stone, relative to the stones position of course.</p>
+		<div class="img-container">
+			<figure>
+				<img src="basic_car.jpg" width="300" height="300"/>
+				<figcaption>Car body (complex 3D shape)</figcaption>
+			</figure>
+			<figure>
+				<img src="basic_rock_crab.jpg" width="300" height="300"/>
+				<figcaption>Crab circles around the stone</figcaption>
+			</figure>
+		</div>
+			<h2 id="materials">Materials <a href="#" class="top">Go to top</a></h2>
+		<div class="img-container">
+			<figure>
+				<img src="basic_terrain.jpg" width="300" height="300"/>
+				<figcaption>Terrain with much more rough shading</figcaption>
+			</figure>
+			<figure>
+				<img src="basic_crystal.jpg" width="300" height="300"/>
+				<figcaption>Crystal which is highly reflective and emits light</figcaption>
+			</figure>
+		</div>
+			<h2 id="texturing">Texturing <a href="#" class="top">Go to top</a></h2>
+		<h1><span style="color:red;">FUCK ! WE FORGOT THIS ! OMG ! NO !!!!</span></h1>
+			<h2 id="illumination">Illumination <a href="#" class="top">Go to top</a></h2>
+		<div class="img-container">
+			<figure>
+				<img src="basic_crystal.jpg" width="300" height="300"/>
+				<figcaption>Crystal as main day light source</figcaption>
+			</figure>
+			<figure>
+				<img src="basic_spotlight.jpg" width="300" height="300"/>
+				<figcaption>Spotlight of the car</figcaption>
+			</figure>
+			<figure>
+				<img src="basic_lower_light.jpg" width="300" height="300"/>
+				<figcaption>Dim light source which orbits the island from below</figcaption>
+			</figure>
+		</div>
+			<h2 id="transparency">Transparency <a href="#" class="top">Go to top</a></h2>
+		<p>We used transparent textures on our billboards and also implemented transparent sorting, to render transparent objects in correct order, depending on the camera position.</p>
+		<div class="img-container">
+			<figure>
+				<img src="basic_grass1.jpg" width="300" height="300"/>
+				<figcaption>Transparent grass billboards (front side)</figcaption>
+			</figure>
+			<figure>
+				<img src="basic_grass2.jpg" width="300" height="300"/>
+				<figcaption>Transparent grass billboards (back side)</figcaption>
+			</figure>
+			<figure>
+				<img src="billboard_front.jpg" width="300" height="300"/>
+				<figcaption>Transparent tree billboards</figcaption>
+			</figure>
+		</div>
+			<h2 id="camera">Camera <a href="#" class="top">Go to top</a></h2>
+		<p>The camera can be controlled after the movie or by pressing the C key. See <a href="./../howto/index.html">user manual</a> for details.</p>
+
+		<h1 id="special">Special effects description <a href="#" class="top">Go to top</a></h1>
+
+		<h2 id="water">Water surface <a href="#" class="top">Go to top</a></h2>
 		<p>The following idea is inspired by a YouTube tutorial series on <a href="https://www.youtube.com/playlist?list=PLRIWtICgwaX23jiqVByUs0bqhnalNTNZh">OpenGL Water</a> by the user <a href="https://www.youtube.com/user/ThinMatrix">ThinMatrix</a>.</p>
 
 		<p>We decided to render the reflection and refraction effects. Reflection means the reflected rays from above the water and refraction means the view below the waters surface, i.e. towards the waters ground.
@@ -47,7 +158,7 @@
 			<img src="water_reflection_camera.png" width="300" height="300"/>
 			<figcaption>Position of reflection camera</figcaption>
 		</figure>
-		<h3>Rendering the reflection and refraction onto textures</h3>
+		<h3 id="water1">Rendering the reflection and refraction onto textures <a href="#" class="top">Go to top</a></h3>
 
 		<p>We need to render the whole scene three times: Water reflection, refraction and the normal viewport rendering. We use FPOs (Frame Buffer Objects) to perform the first two rendering steps. We attached color textures to the FPOs, which serve as a destination for all the pixels that will be rendered to this framebuffer. To reduce the cost of this additional rendering steps we reduce the resolution of those two resulting scenes (at the moment to a quarter of the viewports dimensions) and we also clip away unused objects in the scene. This means, if we render the reflection we clip everything what is below the water level. And on refraction rendering we clip everything that's above water level.</p>
 		<p>To render the whole scene not to the screen, but to a framebuffer, we need to first bind the framebuffer to the created framebuffer. To render to the screen again, one hast to unbind the framebuffer again.</p>
@@ -59,7 +170,7 @@
 		<p>Reflection is rendered with a camera, that is shifted down by twice the current distance between the camera and the water level and an inverted pitch to look up.</p>
 
 		<p></p>
-		<h3>Clipping</h3>
+		<h3 id="water2">Clipping <a href="#" class="top">Go to top</a></h3>
 		<div class="img-container">
 		<figure>
 			<img src="water_clip_down.jpg" width="300" height="300"/>
@@ -81,7 +192,7 @@
 		<code>
 			if (u_enableClipPlane) if (u_simpleClipPlane.x > 0.0 ? v_verticalPosition < u_simpleClipPlane.y : v_verticalPosition > u_simpleClipPlane.y) discard;</code>
 
-		<h3>Projective texture mapping</h3>
+		<h3 id="water3">Projective texture mapping <a href="#" class="top">Go to top</a></h3>
 
 		<div class="img-container">
 			<figure>
@@ -103,7 +214,7 @@
 		<code>vec2 texCoords = normalDeviceCoords / 2.0 + 0.5;</code>
 		<p>With this coordinates, we can lookup the the pixel colors in our framebuffer textures. For refraction this works straight forward. For reflaction we need to flip the texture before (because we would like to have the reflection). We can achive this by using <code>1.0 - texCoords.y</code> as new y coordinate for the reflection texture lookup.</p>
 
-		<h3>Distortion effects</h3>
+		<h3 id="water4">Distortion effects <a href="#" class="top">Go to top</a></h3>
 		<div class="img-container">
 			<figure>
 				<img src="water_no_distort.jpg" width="600" height="300"/>
@@ -137,15 +248,15 @@
 			vec2 distortWave = (texture2D(u_dudvTex, vec2(v_texCoord.x + distort.x, v_texCoord.y - distort.y).xy * 2.0 - 1.0).rg) * 0.01;
 		</code>
 
-		<h3>Fresnel effect</h3>
+		<h3 id="water5">Fresnel effect <a href="#" class="top">Go to top</a></h3>
 
 		<div class="img-container">
 			<figure>
-				<img src="fresnel_up.jpg" width="300" height="300"/>
+				<img src="water_fresnel_up.jpg" width="300" height="300"/>
 				<figcaption>More reflection</figcaption>
 			</figure>
 			<figure>
-				<img src="fresnel_down.jpg" width="300" height="300"/>
+				<img src="water_fresnel_down.jpg" width="300" height="300"/>
 				<figcaption>More refraction</figcaption>
 			</figure>
 			</div>
@@ -162,12 +273,12 @@
 <br/>
 		<br/>
 		<br/>
-		<h2>Billboards</h2>
+		<h2 id="billboards">Billboards <a href="#" class="top">Go to top</a></h2>
 		<figure style="float:right;">
 			<img src="billboard_front.jpg" width="300" height="300"/>
 			<figcaption>Billboard trees</figcaption>
 		</figure>
-		<h3>Orthogonal billboards</h3>
+		<h3 id="billboards1">Orthogonal billboards <a href="#" class="top">Go to top</a></h3>
 		<p>Billboards are 2D-Objects that always face the camera. In our project, we used them to render trees and grass on the island.
 			The billboard itself is a simple 2D-square with a semi-transparent texture with a picture of a tree or grass. Everything that is not part of the tree/grass is transparent.</p>
 		<p>In order to let the billboard always face the camera, we modified the vertex shader.
@@ -199,7 +310,7 @@
 			<figcaption>Incorrect tree billboards (view from above)</figcaption>
 		</figure>
 		</div>
-		<h3>Orthogonal billboards in the XZ plane</h3>
+		<h3 id="billboards2">Orthogonal billboards in the XZ plane <a href="#" class="top">Go to top</a></h3>
 		<p>However, there is a problem with the above solution. Our billboards always face the camera, no matter how much it is rotated.
 			That means, when we rotated our camera in y-direction so that the camera is facing the ground, the billboard still looks at the camera.
 			Since we used the billboards for trees, we will have a tree that is lying on the floor. The idea is to preserve only the rotations, scales, etc. that affect the y-axis.
