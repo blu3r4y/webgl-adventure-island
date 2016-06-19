@@ -82,8 +82,8 @@ loadResources({
 	tex_dry: 'models/island/texture/dry.jpg',
 	tex_rock: 'models/stone/texture/stone.jpg',
 	tex_dudv: 'models/water/dudv.jpg',
-	tex_test: 'models/test.jpg',
-	tex_metal: 'models/metaltexture.jpg',
+	tex_test: 'models/other/test.jpg',
+	tex_ice: 'models/other/ice.jpg',
 
 	// skybox
 	env_night_pos_x: 'models/skybox/moon_rt_min.jpg',
@@ -317,13 +317,14 @@ function makeCoordinateCross(gl, resources) {
 function makeVehicle(gl, resources) {
 	// pyramid on top of vehicle
 
-	let pyramidMaterial = new MaterialSGNode(new NiceTextureSGNode(resources.tex_metal, 0.2,
+	let pyramidMaterial = new MaterialSGNode(new NiceTextureSGNode(resources.tex_ice, 4.0,
 		new RenderSGNode(makePyramidRenderObject())));
 
 	pyramidMaterial.ambient = [0.24725, 0.1995, 0.2745, 1];
 	pyramidMaterial.diffuse = [0.75164, 0.60648, 0.42648, 1];
-	pyramidMaterial.specular = [0.628281, 0.555802, 0.666065, 1];
+	pyramidMaterial.specular = [0.0628281, 0.0555802, 0.0666065, 1];
 	pyramidMaterial.emission = [0.1, 0.1, 0.1, 1];
+	pyramidMaterial.shininess = 0.2;
 
 	let pyramidShaderNode = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), pyramidMaterial);
 
