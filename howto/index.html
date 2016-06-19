@@ -36,22 +36,45 @@
 			  font-weight: bold;
 			  text-decoration: none;
 		  }
+		  table td {
+			  padding: 0 30px 8px 0;
+		  }
 	  </style>
   </head>
   <body>
+
+  <p><a href="../code/index.html">Back</a></p>
 		<h1>Adventure Island User Manual</h1>
 		<h2>Description</h2>
 		<p>Adventure Island is an animated short movie.</br>
 		A floating vehicle explores a small island in 30 seconds.</p>
-		<p><img src="island.png"></p>
+		<div class="img-container">
+			<figure>
+				<img src="island_day.jpg" width="300" height="300"/>
+				<figcaption>Island in day scene</figcaption>
+			</figure>
+			<figure>
+				<img src="island_night.jpg" width="300" height="300"/>
+				<figcaption>Island in night scene</figcaption>
+			</figure>
+		</div>
 		<p>The movie can either be watched in <b>automatic</b> or <b>user-controlled</b> camera mode.</p>
 		<h3>Automatic camera mode</h3>
 		<p>In this mode, the camera moves automatically so the current scene in the movie is always visible. When the movie starts, the automatic camera mode is switched on. You can switch to the user-controlled camera mode manually (see <a href="#controls">Controls</a> for details).</p>
 		<h3>User-controlled camera mode</h3>
 		<p>In this mode, the user can move the camera freely. It is not possible to switch back from user mode to automatic camera mode. After 30 seconds, when the movie is finished, the user-controlled camera mode is switched on automatically. The animation of the vehicle is not affected by the camera mode. However, the animations of the crab that lives under a stone and the floating crystal which turns into daylight are only triggered when the camera approaches said objects.</p>
-		<p><img src="rock.png"> <img src="crystal"></p>
+		<div class="img-container">
+			<figure>
+				<img src="rock.jpg" width="300" height="300"/>
+				<figcaption>Car illuminating a stone and a crab</figcaption>
+			</figure>
+			<figure>
+				<img src="crystal.jpg" width="300" height="300"/>
+				<figcaption>Car illuminating a crystal</figcaption>
+			</figure>
+		</div>
 		<p>The animation of the crab can be triggered multiple times. The animation of the crystal can only be triggered once.</p>
-		<a name="controls"><h2>Controls</h2></a>
+		<h2 id="controls">Controls</h2>
 		<table>
 			<tr><td>F5</td><td>restart movie in automatic camera mode</td></tr>
 			<tr><td>C</td><td>turn on user-controlled camera mode</td></tr>
