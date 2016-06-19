@@ -12,17 +12,17 @@
 		<p>The world coordinates of the vertex (<code>a_position</code>) are first multiplied with the model-view matrix and then the projection is applied (by multiplying the result with the projection matrix).</p>
 		<p>After multiplying the vertex coordinates vector with the model-view matrix, we get a result that looks like this:</p>
 		<p><img src="billboard1.png" /></p>
-		<p>The 3x3 sub-matrix in the upper left corner of the model-view matrix contains all transformations like rotations, scales and shears and the vector in the 4th column of the matrix contains the translations. For the billboard effect, we need to get rid of all the transformations - the square mustn't be rotated or scaled in anyway. No matter where the camera is, the billboard always needs to look the same. However, we need to preserve the translations because otherwise we couldn't move the billboards anywhere (we want them to be in arbitrary positions). So we want our resulting vector to look like this:</p>
+		<p>The 3x3 sub-matrix in the upper left corner of the model-view matrix contains all transformations like rotations, scales and shears and the vector in the 4th column of the matrix contains the translations. For the billboard effect, we need to get rid of all the transformations - the square mustn't be rotated or scaled in any way. No matter where the camera is, the billboard always needs to look the same. However, we need to preserve the translations because otherwise we couldn't move the billboards anywhere (we want them to be in arbitrary positions). So we want our resulting vector to look like this:</p>
 		<p><img src="billboard2.png" /></p>
 		<p>We can achieve this by multiplying the model-view matrix with a special vector...</p>
 		<p><img src="billboard3.png" /></p>
-		<p>...and then adding the a_position vector</p>
+		<p>...and then adding the <code>a_position</code> vector</p>
 		<p><img src="billboard4.png" /></p>
 		<p>The the projection matrix is added as usual and we have a perfect billboard that always faces the camera.</p>
 		<p><code>gl_Position =  u_projection * (u_modelView * vec4(0.0,0.0,0.0,1.0) + vec4(a_position.x, a_position.y, a_position.z, 0.0));</code></p>
-		<p>However, there is a problem with this solution. Out billboards always face the camera, no matter how much it is rotated. That means, when we rotated our camera in y-direction so that the camera is facing the ground, the billboard still looks at the camera. Since we used the billboards for trees, we will have a tree that is lying on the floor. The idea is to preserve only the rotations, scales, etc. that affect the y-axis. This way, the tree will always stand on the ground. We want to have a result vector that looks like this: </p>
+		<p>However, there is a problem with this solution. Our billboards always face the camera, no matter how much it is rotated. That means, when we rotate our camera in y-direction so that the camera is facing the ground, the billboard still looks at the camera. Since we used the billboards for trees, we will have a tree that is lying on the floor. The idea is to preserve only the rotations, scales, etc. that affect the y-axis. This way, the tree will always stand on the ground. We want to have a result vector that looks like this: </p>
 		<p><img src="billboard5.png" /></p>
-		<p>In order to preserve the y-Transformations, we multiply the 2nd column of the model view matrix with y-coordinate of the a_position vector:</p>
+		<p>In order to preserve the y-Transformations, we multiply the 2nd column of the model view matrix with y-coordinate of the <code>a_position</code> vector:</p>
 		<p><code>vec4 rotationY = u_modelView[1] * a_position.y;</code></p>
 		<p>This gives us the following vector:</p>
 		<p><img src="billboard6.png" /></p>
