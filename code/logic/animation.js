@@ -56,6 +56,7 @@ var lastStateTime = 0;
 function renderAnimations(timeInMilliseconds, deltaInMilliseonds)
 {
 	let rotationFactor = 0.1;
+	//Determines how many time the crab walks around the stone
 	let circles = 3;
 
 	switch (state) {
@@ -101,7 +102,7 @@ function renderAnimations(timeInMilliseconds, deltaInMilliseonds)
 				}
 			}
 			break;
-		case 3:
+		case 3://vehicle  rotates
 			if (vehicleData.rotation.z > 180) {
 				vehicleData.rotation.z -= 1;
 			}
@@ -110,7 +111,7 @@ function renderAnimations(timeInMilliseconds, deltaInMilliseonds)
 				lastStateTime = timeInMilliseconds;
 			}
 			break;
-		case 4:
+		case 4://vehicle moves forward to the stone
 			if(!userControlled) followVehicle(5);
 			if(timeInMilliseconds - lastStateTime < 2500){
 				moveVehicle(lastStateTime + 2500 - timeInMilliseconds)
@@ -126,7 +127,7 @@ function renderAnimations(timeInMilliseconds, deltaInMilliseonds)
 				}
 			}
 			break;
-		case 5:
+		case 5://camera "jumps" back
 			if (timeInMilliseconds - lastStateTime > 1500) {
 				if(!userControlled) followVehicle(7);
 				state++;
@@ -139,7 +140,7 @@ function renderAnimations(timeInMilliseconds, deltaInMilliseonds)
 				lastStateTime = timeInMilliseconds;
 			}
 			break;
-		case 7:
+		case 7://vehicle rotates and camera follows
 			if (vehicleData.rotation.z > 135) {
 				vehicleData.rotation.z -= 1;
 			}
@@ -153,7 +154,7 @@ function renderAnimations(timeInMilliseconds, deltaInMilliseonds)
 				}
 			}
 			break;
-		case 8:
+		case 8://vehicle moves to crystal and camera follows
 			if(!userControlled) followVehicle(5);
 			if(timeInMilliseconds - lastStateTime < 2500){
 				moveVehicle(lastStateTime + 2500 - timeInMilliseconds)
@@ -169,14 +170,14 @@ function renderAnimations(timeInMilliseconds, deltaInMilliseonds)
 				}
 			}
 			break;
-		case 9:
+		case 9://camera moves backwards
 			if (timeInMilliseconds - lastStateTime > 500) {
 				if(!userControlled) followVehicle(7);
 				state++;
 				lastStateTime = timeInMilliseconds;
 			}
 			break;
-		case 10:
+		case 10://when the crystal reaches a certain height, the vehicle turns its light off
 			if(crystalData.pos.y > (crystalHeight/4) / crystalScale){
 				spotLight.light.ambient = [0, 0, 0, 1];
 				spotLight.light.diffuse = [0, 0, 0, 1];
@@ -186,7 +187,7 @@ function renderAnimations(timeInMilliseconds, deltaInMilliseonds)
 				lastStateTime = timeInMilliseconds;
 			}
 			break;
-		case 11:
+		case 11://time is over - if the crystal is still rising, stop it
 			if(timeInMilliseconds > 30000){
 				state++;
 				lastStateTime = timeInMilliseconds;
@@ -200,7 +201,7 @@ function renderAnimations(timeInMilliseconds, deltaInMilliseonds)
 		case 12:	//We're done with the movie, swith to user mode
 			userControlled = true;
 			console.log("Time elapsed: " + timeInMilliseconds);
-			console.log("x" + camera.sollPos.x, "y" + camera.sollPos.y, "z" + camera.sollPos.z);
+			//console.log("x: " + camera.sollPos.x, "y: " + camera.sollPos.y, "z: " + camera.sollPos.z);
 			state++;
 			break;
 		default:
@@ -242,8 +243,7 @@ function renderAnimations(timeInMilliseconds, deltaInMilliseonds)
 	waterShaderNode.camera = [camera.istPos.x, camera.istPos.y, camera.istPos.z];
 
 	//Animate pyramid always
-	pyramidNode.matrix = glm.rotateZ(timeInMilliseconds * -rotationFactor); //glm.transform({translate: [0, 0.5, 0],
-//	scale: 0.75, rotateY: timeInMilliseconds * -0.01});//glm.rotateZ(timeInMilliseconds * -0.01);
+	pyramidNode.matrix = glm.rotateZ(timeInMilliseconds * -rotationFactor);
 	// Animate rock every 100 ms
 	if (animateRock && ((timeInMilliseconds - animationTime) > 100)) {
 		//Alternate between 0 and 1
@@ -263,12 +263,12 @@ function renderAnimations(timeInMilliseconds, deltaInMilliseonds)
 			translate: [0, crystalData.pos.y++, 0],
 			rotateY: 270 + timeInMilliseconds * -rotationFactor
 		});
-		if(crystalLight.light.diffuse[0] < 0.5){
+		if(crystalLight.light.diffuse[0] < 0.7){
 			crystalLight.light.diffuse[0] += 0.1;
 			crystalLight.light.diffuse[1] += 0.1;
 			crystalLight.light.diffuse[2] += 0.1;
 		}
-		if(crystalLight.light.specular[0] < 0.6){
+		if(crystalLight.light.specular[0] < 0.8){
 			crystalLight.light.specular[0] += 0.1;
 			crystalLight.light.specular[1] += 0.1;
 			crystalLight.light.specular[2] += 0.1;
@@ -279,7 +279,6 @@ function renderAnimations(timeInMilliseconds, deltaInMilliseonds)
 			toggleCubeMapTexture(activeSkybox === 0 ? 1 : 0);
 		}
 	}
-	//vehicleData.rotation.z = timeInMilliseconds*-rotationFactor;
 	vehicleNode.matrix = glm.transform({
 		translate: [vehicleData.isPos.x, vehicleData.isPos.y, vehicleData.isPos.z],
 		rotateZ: vehicleData.rotation.z,

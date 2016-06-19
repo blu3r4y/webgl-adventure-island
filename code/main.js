@@ -44,7 +44,6 @@ const reflectionColorTexUnit = 3;
 const refractionColorTexUnit = 4;
 
 // other constants
-
 const crystalScale = 0.025;
 var lastSampleTime = 0;
 var lastTimeInMilliseconds = 0;
@@ -252,11 +251,7 @@ function makeLightDownWithSphere(gl, resources) {
 	light.diffuse = [0.15, 0.15, 0.15, 1];
 	light.specular = [0, 0, 0, 1];
 	light.position = [0, 0, 0];
-	/*
-	 light.ambient = [0.2, 0.2, 0.2, 1];
-	 light.diffuse = [0.8, 0.8, 0.8, 1];
-	 light.specular = [1, 1, 1, 1];*/
-
+	
 	// translating the light is the same as setting the light position
 	let translateLight = new TransformationSGNode(glm.translate(10, -20, 10), [light, createLightSphere()]);
 
@@ -437,7 +432,7 @@ function makeCrystal(gl, resources) {
 	crystalMaterial.ambient = [1, 1, 0.8, 1];
 	crystalMaterial.diffuse = [1, 1, 0.8, 1];
 	crystalMaterial.specular = [1, 1, 0.8, 1];
-	crystalMaterial.emission = [0, 0, 0, 1];
+	crystalMaterial.emission = [0.3, 0.3, 0.3, 1];
 	crystalMaterial.shininess = 0.6;
 
 	crystalNode = new TransformationSGNode(mat4.create(),

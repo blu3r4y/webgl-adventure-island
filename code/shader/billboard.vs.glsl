@@ -25,7 +25,7 @@ void main() {
 	vec4 rotationY = u_modelView[1] * a_position.y;
 	//nomal eye position
 	//vec4 eyePosition = u_modelView * vec4(a_position, 1.0);
-	//"Adapted" eyeposition
+	//"Adapted" eyeposition - not changing anything though
 	vec4 eyePosition = u_modelView * vec4(0.0,0.0,0.0,1.0) + vec4(a_position.x, 0.0, a_position.z, 0.0) + rotationY;
 
 	v_position = a_position;
