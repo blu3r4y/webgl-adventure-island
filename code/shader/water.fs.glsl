@@ -32,9 +32,9 @@ void main (void) {
 
 	// distort and keep within valid range
 	reflectCoords.x = clamp(reflectCoords.x + distortWave.x, 0.0, 1.0);
-	reflectCoords.y = clamp(reflectCoords.y + distortWave.x, 0.0, 1.0);
+	reflectCoords.y = clamp(reflectCoords.y + distortWave.y, 0.0, 1.0);
 	refractCoords.x = clamp(refractCoords.x + distortWave.x, 0.0, 1.0);
-	refractCoords.y = clamp(refractCoords.y + distortWave.x, 0.0, 1.0);
+	refractCoords.y = clamp(refractCoords.y + distortWave.y, 0.0, 1.0);
 
 	// map the projected texture
 	vec4 reflectColor = texture2D(u_reflectTex, reflectCoords);

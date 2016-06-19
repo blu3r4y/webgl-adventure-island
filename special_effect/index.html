@@ -2,7 +2,7 @@
   <head>
 	  <title>Adventure Island Special Effects</title>
 	  <style type="text/css">
-		  #img-container {
+		  .img-container {
 			  /*text-align: center;*/
 		  }
 		  figure {
@@ -10,6 +10,10 @@
 		  }
 		  figcaption {
 			  margin: 10px 0 0 0;
+		  }
+		  body {
+			  font-family: sans-serif;
+			  margin: 40px;
 		  }
 	  </style>
   </head>
@@ -25,8 +29,9 @@
 
 		<h1>Adventure Island Special Effects</h1>
 
-		<h2>Water Surface</h2>
+		<h2>Water surface</h2>
 		<p>The following idea is inspired by a YouTube tutorial series on <a href="https://www.youtube.com/playlist?list=PLRIWtICgwaX23jiqVByUs0bqhnalNTNZh">OpenGL Water</a> by the user <a href="https://www.youtube.com/user/ThinMatrix">ThinMatrix</a>.</p>
+
 		<p>We decided to render the reflection and refraction effects. Reflection means the reflected rays from above the water and refraction means the view below the waters surface, i.e. towards the waters ground.
 			<br/>
 			In order to get a correct reflection and refraction effect several steps need to be performed in succession:</p>
@@ -38,9 +43,24 @@
 			<li>Mix the reflection and refraction texture in a way which depends on the current camera position to achieve a fresnel effect. The fresnel effect is a physical phenomena. If you look at a water's surface from a low angle you most likely see just reflected rays. However, when looking straight down into a water you don't see that much of a reflection anymore and more refraction.</li>
 		</ul>
 
+		<figure style="float:right;">
+			<img src="water_reflection_camera.png" width="300" height="300"/>
+			<figcaption>Position of reflection camera</figcaption>
+		</figure>
 		<h3>Rendering the reflection and refraction onto textures</h3>
-		<p>We need to render the whole scene three times: Water reflection, refraction and the normal viewport rendering. We use FPOs (Frame Buffer Objects) to perform the first two rendering steps. To reduce the cost of this additional rendering steps we reduce the resolution of those two resulting scenes (at the moment to a quarter of the viewports dimensions) and we also clip away unused objects in the scene. This means, if we render the reflection we clip everything what is below the water level. And on refraction rendering we clip everything that's above water level.</p>
-		<div id="img-container">
+
+		<p>We need to render the whole scene three times: Water reflection, refraction and the normal viewport rendering. We use FPOs (Frame Buffer Objects) to perform the first two rendering steps. We attached color textures to the FPOs, which serve as a destination for all the pixels that will be rendered to this framebuffer. To reduce the cost of this additional rendering steps we reduce the resolution of those two resulting scenes (at the moment to a quarter of the viewports dimensions) and we also clip away unused objects in the scene. This means, if we render the reflection we clip everything what is below the water level. And on refraction rendering we clip everything that's above water level.</p>
+		<p>To render the whole scene not to the screen, but to a framebuffer, we need to first bind the framebuffer to the created framebuffer. To render to the screen again, one hast to unbind the framebuffer again.</p>
+		<code>gl.bindFramebuffer(gl.FRAMEBUFFER, reflectionFrameBuf);<br/>
+			// render to framebuffer<br/>
+			gl.bindFramebuffer(gl.FRAMEBUFFER, null);<br/>
+			// render to screen</code>
+		<p>Refraction is rendered with the same camera as usual, expect we clip everything above the water.</p>
+		<p>Reflection is rendered with a camera, that is shifted down by twice the current distance between the camera and the water level and an inverted pitch to look up.</p>
+
+		<p></p>
+		<h3>Clipping</h3>
+		<div class="img-container">
 		<figure>
 			<img src="water_clip_down.jpg" width="300" height="300"/>
 			<figcaption>Clipping below the water for reflection</figcaption>
@@ -49,11 +69,104 @@
 			<img src="water_clip_up.jpg" width="300" height="300"/>
 			<figcaption>Clipping above the water for refraction</figcaption>
 		</figure>
+			<figure>
+				<img src="water_clip_bug1.jpg" width="300" height="300"/>
+				<figcaption>Reflection rendering without clipping shows artifacts</figcaption>
+			</figure>
 		</div>
 		<p>These clipping steps are necessary for simplification and to avoid unwanted artifacts. If we would render the reflection texture from below without clipping objects underneath the water, we would also see objects, which are inside the water to be rendered. Obviously, the should clearly not be rendered for a reflection.</p>
+		<p>Because WebGL, in contrast to OpenGL, doesn't support clipping easily by enabling a flag and supplying a clipping plane, we needed to do this by hand in the fragment shader. We just need clipping based on y-coordinates, therefore we first calculate the resulting y-coordinate of a vertex in world space to a varying called <code>varying float v_verticalPosition</code>:</p>
+		<code>v_verticalPosition = (u_invView * eyePosition).y;</code>
+		<p>In the fragment shader, we discard fragments which have a y-component (<code>v_verticalPosition</code>) below or above the defined clipping "plane". In this case a two-dimensional vector uniform <code>u_simpleClipPlane</code> stores two information. The first (x) component decides whether we clip above the desired y-value or below. The second (y) component supplies this clipping breakpoint on the y-axis.</p>
+		<code>
+			if (u_enableClipPlane) if (u_simpleClipPlane.x > 0.0 ? v_verticalPosition < u_simpleClipPlane.y : v_verticalPosition > u_simpleClipPlane.y) discard;</code>
 
+		<h3>Projective texture mapping</h3>
 
+		<div class="img-container">
+			<figure>
+				<img src="water_proj_green.jpg" width="300" height="300"/>
+				<figcaption>Scene without projected textures</figcaption>
+			</figure>
+			<figure>
+				<img src="water_proj_final.jpg" width="300" height="300"/>
+				<figcaption>Scene with projected refraction texture</figcaption>
+			</figure>
+		</div>
+		<p>In order to understand the upcoming coordinate space conversion, it is crucial to know the transformation pipeline stages and the transformation matrices in between. More on this topic is explained in the introduction of this <a href="http://antongerdelan.net/opengl/raycasting.html">raycasting tutorial</a> by Anton Gerdelan.</p>
+		<p>Now that we got our reflection and refraction textures we need to paint them onto the water's surface. For this we use projective texture mapping. We got a texture of our scene in a framebuffer and want to map it exactly onto the water plane in our screen scene. So for any given fragment we are coloring in the fragment shader, we want to color it with the equivalent color of the pixel in the framebuffer texture at this position. So we need the fragments position in normal device coordinates and lookup the texture pixel at this position. To get the normal device coordinates, we first need to pass the <code>gl_Position</code> output from the vertex shader over to the fragment shader:</p>
+		<code>	v_clipSpace = u_projection * eyePosition;<br/>
+			gl_Position = v_clipSpace;</code>
+		<p>As usual, we apply the projection matrix to the vertex point in eye space to get to clip space. We pass this information as a varying <code>v_clipSpace</code> to the fragment shader. Inside the fragment shader, we only need perspective division to get from clip space to normal device coordinates:</p>
+		<code>vec2 normalDeviceCoords = v_clipSpace.xy / v_clipSpace.w;</code>
+		<p>Now we know the NDC (normal device coordinates) for each fragment we want to shade. NDC range from <code>-1.0</code> to <code>1.0</code>. Texture coordinates range from <code>0.0</code> to <code>1.0</code>. Therefore we need to convert these coordinates:</p>
+		<code>vec2 texCoords = normalDeviceCoords / 2.0 + 0.5;</code>
+		<p>With this coordinates, we can lookup the the pixel colors in our framebuffer textures. For refraction this works straight forward. For reflaction we need to flip the texture before (because we would like to have the reflection). We can achive this by using <code>1.0 - texCoords.y</code> as new y coordinate for the reflection texture lookup.</p>
+
+		<h3>Distortion effects</h3>
+		<div class="img-container">
+			<figure>
+				<img src="water_no_distort.jpg" width="600" height="300"/>
+				<figcaption>Without distortion effects</figcaption>
+			</figure>
+			<figure>
+				<img src="water_distort.jpg" width="600" height="300"/>
+				<figcaption>With distortion effects</figcaption>
+			</figure>
+			<figure>
+				<img src="water_dudv.jpg" width="300" height="300"/>
+				<figcaption>du/dv map</figcaption>
+			</figure>
+		</div>
+
+		<p>To make the water more interesting we try to imitate wave movements. For this to work, we don't want to assign always the same color which we looked up in the texture but sometimes use neighbouring pixels. A common approach to achieve this result in a nice looking way is to use a third texture (a du/dv map) which determines small offset values for our texture lookup. That means, for each fragment we first lookup a color value inside the du/dv map. This value consist only of red and green components to mimic two offset channels. We use these values, divide them by some constant to keep the offset value small and lookup the final color for the reflection texture with these offset values in x and y direction.</p>
+		<code>
+			// distort the lookup position<br/>
+			reflectCoords.x = clamp(reflectCoords.x + distortWave.x, 0.0, 1.0);<br/>
+			reflectCoords.y = clamp(reflectCoords.y + distortWave.y, 0.0, 1.0);<br/>
+			refractCoords.x = clamp(refractCoords.x + distortWave.x, 0.0, 1.0);<br/>
+			refractCoords.y = clamp(refractCoords.y + distortWave.y, 0.0, 1.0);<br/>
+			<br/>
+			// map the projected texture<br/>
+			vec4 reflectColor = texture2D(u_reflectTex, reflectCoords);<br/>
+			vec4 refractColor = texture2D(u_refractTex, refractCoords);
+		</code>
+		<p>For even more distortion we lookup the distortion offset values two times. The result of the first lookup is used on the same texture for a second lookup. The values also need to be scaled, so they can be even negative.</p>
+		<code>
+			vec2 distort = (texture2D(u_dudvTex, vec2(v_texCoord.x + u_waveOffset, v_texCoord.y).xy * 2.0 - 1.0).rg) * 0.05;<br/>
+			vec2 distortWave = (texture2D(u_dudvTex, vec2(v_texCoord.x + distort.x, v_texCoord.y - distort.y).xy * 2.0 - 1.0).rg) * 0.01;
+		</code>
+
+		<h3>Fresnel effect</h3>
+
+		<div class="img-container">
+			<figure>
+				<img src="fresnel_up.jpg" width="300" height="300"/>
+				<figcaption>More reflection</figcaption>
+			</figure>
+			<figure>
+				<img src="fresnel_down.jpg" width="300" height="300"/>
+				<figcaption>More refraction</figcaption>
+			</figure>
+			</div>
+
+		<p>As a last minor step we want to decide/mix the reflection and refraction texture based on the current camera position.
+			If the camera looks straight down into the water, one should mostly see into the water without any reflection. However if you look at the water from a low angle, the water should be very reflective.</p>
+		<p>For this to work, we first need to pass the current camera position as a uniform to the vertex shader.
+			After that, we calculate the dot product of the waters plane normal vector and the vector reaching from the camera to the current vertex point.</p>
+		<code>v_cameraVec = normalize(u_cameraPos - (u_invView * eyePosition.xyz));</code>
+		<p>In the fragment shader we use this vector to calculate the dot product and mix the two texture colors accordingly:</p>
+		<code>// calculate fresnel factor and make water a bit overreflective<br/>
+			float fresnel = dot(normalize(v_cameraVec), vec3(0., 1., 0.));<br/>
+			fresnel = pow(fresnel, 3.0);</code>
+<br/>
+		<br/>
+		<br/>
 		<h2>Billboards</h2>
+		<figure style="float:right;">
+			<img src="billboard_front.jpg" width="300" height="300"/>
+			<figcaption>Billboard trees</figcaption>
+		</figure>
 		<h3>Orthogonal billboards</h3>
 		<p>Billboards are 2D-Objects that always face the camera. In our project, we used them to render trees and grass on the island.
 			The billboard itself is a simple 2D-square with a semi-transparent texture with a picture of a tree or grass. Everything that is not part of the tree/grass is transparent.</p>
@@ -75,6 +188,17 @@
 		<p><img src="billboard4.png" /></p>
 		<p>The projection matrix is added as usual and we have a perfect billboard that always faces the camera.</p>
 		<p><code>gl_Position =  u_projection * (u_modelView * vec4(0.0,0.0,0.0,1.0) + vec4(a_position.x, a_position.y, a_position.z, 0.0));</code></p>
+		<div style="float:right;">
+		<figure>
+			<img src="billboard_down.jpg" width="300" height="300"/>
+			<figcaption>Correct tree billboards (view from above)</figcaption>
+		</figure>
+<br/>
+		<figure>
+			<img src="billboard_wrong.jpg" width="300" height="300"/>
+			<figcaption>Incorrect tree billboards (view from above)</figcaption>
+		</figure>
+		</div>
 		<h3>Orthogonal billboards in the XZ plane</h3>
 		<p>However, there is a problem with the above solution. Our billboards always face the camera, no matter how much it is rotated.
 			That means, when we rotated our camera in y-direction so that the camera is facing the ground, the billboard still looks at the camera.
