@@ -1,34 +1,94 @@
 <html>
   <head>
-    <title>Adventure Island Special Effects</title>
+	  <title>Adventure Island Special Effects</title>
+	  <style type="text/css">
+		  #img-container {
+			  /*text-align: center;*/
+		  }
+		  figure {
+			  display: inline-block;
+		  }
+		  figcaption {
+			  margin: 10px 0 0 0;
+		  }
+	  </style>
   </head>
   <body>
+  		<h1>Adventure Island Basic Effects</h1>
+
+			<h2>Scene graph elements</h2>
+			<h2>Materials</h2>
+			<h2>Texturing</h2>
+			<h2>Illumination</h2>
+			<h2>Transparency</h2>
+			<h2>Camera</h2>
+
 		<h1>Adventure Island Special Effects</h1>
+
 		<h2>Water Surface</h2>
+		<p>The following idea is inspired by a YouTube tutorial series on <a href="https://www.youtube.com/playlist?list=PLRIWtICgwaX23jiqVByUs0bqhnalNTNZh">OpenGL Water</a> by the user <a href="https://www.youtube.com/user/ThinMatrix">ThinMatrix</a>.</p>
+		<p>We decided to render the reflection and refraction effects. Reflection means the reflected rays from above the water and refraction means the view below the waters surface, i.e. towards the waters ground.
+			<br/>
+			In order to get a correct reflection and refraction effect several steps need to be performed in succession:</p>
+		<ul>
+			<li>Render the reflection to a texture, i.e. a view from underneath the waters surface.</li>
+			<li>Render the refraction to a texture, which is exactly the same view as the normal camera observes with the exception that this view solely contains the vertices underneath the water without any other objects.</li>
+			<li>Use projective texture mapping to map this textures onto a plane which represents the waters surface.</li>
+			<li>Distort the projected textures with a du/dv map to imitate wave movements.</li>
+			<li>Mix the reflection and refraction texture in a way which depends on the current camera position to achieve a fresnel effect. The fresnel effect is a physical phenomena. If you look at a water's surface from a low angle you most likely see just reflected rays. However, when looking straight down into a water you don't see that much of a reflection anymore and more refraction.</li>
+		</ul>
+
+		<h3>Rendering the reflection and refraction onto textures</h3>
+		<p>We need to render the whole scene three times: Water reflection, refraction and the normal viewport rendering. We use FPOs (Frame Buffer Objects) to perform the first two rendering steps. To reduce the cost of this additional rendering steps we reduce the resolution of those two resulting scenes (at the moment to a quarter of the viewports dimensions) and we also clip away unused objects in the scene. This means, if we render the reflection we clip everything what is below the water level. And on refraction rendering we clip everything that's above water level.</p>
+		<div id="img-container">
+		<figure>
+			<img src="water_clip_down.jpg" width="300" height="300"/>
+			<figcaption>Clipping below the water for reflection</figcaption>
+		</figure>
+		<figure>
+			<img src="water_clip_up.jpg" width="300" height="300"/>
+			<figcaption>Clipping above the water for refraction</figcaption>
+		</figure>
+		</div>
+		<p>These clipping steps are necessary for simplification and to avoid unwanted artifacts. If we would render the reflection texture from below without clipping objects underneath the water, we would also see objects, which are inside the water to be rendered. Obviously, the should clearly not be rendered for a reflection.</p>
+
+
 		<h2>Billboards</h2>
-		<p>Billboards are 2D-Objects that always face the camera. In our project, we used them to render trees and grass on the island. The billboard itself is a simple 2D-square with a semi-transparent texture with a picture of a tree or grass. Everything that is not part of the tree/grass is transparent.</p>
-		<p>In order to let the billboard always face the camera, we modified the vertex shader.<br/>In an ordinary vertex shader, we use the following code to determine the position of every vertex:</p>
+		<h3>Orthogonal billboards</h3>
+		<p>Billboards are 2D-Objects that always face the camera. In our project, we used them to render trees and grass on the island.
+			The billboard itself is a simple 2D-square with a semi-transparent texture with a picture of a tree or grass. Everything that is not part of the tree/grass is transparent.</p>
+		<p>In order to let the billboard always face the camera, we modified the vertex shader.
+			<br/>
+			In an ordinary vertex shader, we use the following code to determine the position of every vertex:</p>
 		<p><code>gl_Position = u_projection * u_modelView * vec4(a_position,1);</code></p>
 		<p>The world coordinates of the vertex (<code>a_position</code>) are first multiplied with the model-view matrix and then the projection is applied (by multiplying the result with the projection matrix).</p>
 		<p>After multiplying the vertex coordinates vector with the model-view matrix, we get a result that looks like this:</p>
 		<p><img src="billboard1.png" /></p>
-		<p>The 3x3 sub-matrix in the upper left corner of the model-view matrix contains all transformations like rotations, scales and shears and the vector in the 4th column of the matrix contains the translations. For the billboard effect, we need to get rid of all the transformations - the square mustn't be rotated or scaled in anyway. No matter where the camera is, the billboard always needs to look the same. However, we need to preserve the translations because otherwise we couldn't move the billboards anywhere (we want them to be in arbitrary positions). So we want our resulting vector to look like this:</p>
+		<p>The 3x3 sub-matrix in the upper left corner of the model-view matrix contains all transformations like rotations, scales and shears and the vector in the 4th column of the matrix contains the translations.
+			For the billboard effect, we need to get rid of all the transformations - the square mustn't be rotated or scaled in any way.
+			No matter where the camera is, the billboard always needs to look the same.
+			However, we need to preserve the translations because otherwise we couldn't move the billboards anywhere (we want them to be in arbitrary positions). So we want our resulting vector to look like this:</p>
 		<p><img src="billboard2.png" /></p>
 		<p>We can achieve this by multiplying the model-view matrix with a special vector...</p>
 		<p><img src="billboard3.png" /></p>
-		<p>...and then adding the a_position vector</p>
+		<p>...and then adding the <code>a_position</code> vector</p>
 		<p><img src="billboard4.png" /></p>
-		<p>The the projection matrix is added as usual and we have a perfect billboard that always faces the camera.</p>
+		<p>The projection matrix is added as usual and we have a perfect billboard that always faces the camera.</p>
 		<p><code>gl_Position =  u_projection * (u_modelView * vec4(0.0,0.0,0.0,1.0) + vec4(a_position.x, a_position.y, a_position.z, 0.0));</code></p>
-		<p>However, there is a problem with this solution. Out billboards always face the camera, no matter how much it is rotated. That means, when we rotated our camera in y-direction so that the camera is facing the ground, the billboard still looks at the camera. Since we used the billboards for trees, we will have a tree that is lying on the floor. The idea is to preserve only the rotations, scales, etc. that affect the y-axis. This way, the tree will always stand on the ground. We want to have a result vector that looks like this: </p>
+		<h3>Orthogonal billboards in the XZ plane</h3>
+		<p>However, there is a problem with the above solution. Our billboards always face the camera, no matter how much it is rotated.
+			That means, when we rotated our camera in y-direction so that the camera is facing the ground, the billboard still looks at the camera.
+			Since we used the billboards for trees, we will have a tree that is lying on the floor. The idea is to preserve only the rotations, scales, etc. that affect the y-axis.
+			This way, the tree will always stand on the ground. We want to have a result vector that looks like this: </p>
 		<p><img src="billboard5.png" /></p>
-		<p>In order to preserve the y-Transformations, we multiply the 2nd column of the model view matrix with y-coordinate of the a_position vector:</p>
+		<p>In order to preserve the y-transformations, we multiply the 2<sup>nd</sup> column of the model-view matrix with the y-coordinate of the <code>a_position</code> vector:</p>
 		<p><code>vec4 rotationY = u_modelView[1] * a_position.y;</code></p>
 		<p>This gives us the following vector:</p>
 		<p><img src="billboard6.png" /></p>
 		<p>Now we can use additions to build the vector we need:</p>
 		<p><img src="billboard7.png" /></p>
 		<p><code>gl_Position =  u_projection * (u_modelView * vec4(0.0,0.0,0.0,1.0) + vec4(a_position.x, 0.0, a_position.z, 0.0) + rotationY);</code></p>
+		<br/>
 		<p><a href="../code/index.html">Back</a></p>
 	</body>
 </html>
