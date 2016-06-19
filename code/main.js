@@ -83,6 +83,7 @@ loadResources({
 	tex_rock: 'models/stone/texture/stone.jpg',
 	tex_dudv: 'models/water/dudv.jpg',
 	tex_test: 'models/test.jpg',
+	tex_metal: 'models/metaltexture.jpg',
 
 	// skybox
 	env_night_pos_x: 'models/skybox/moon_rt_min.jpg',
@@ -251,7 +252,7 @@ function makeLightDownWithSphere(gl, resources) {
 	light.diffuse = [0.15, 0.15, 0.15, 1];
 	light.specular = [0, 0, 0, 1];
 	light.position = [0, 0, 0];
-	
+
 	// translating the light is the same as setting the light position
 	let translateLight = new TransformationSGNode(glm.translate(10, -20, 10), [light, createLightSphere()]);
 
@@ -316,15 +317,20 @@ function makeCoordinateCross(gl, resources) {
 function makeVehicle(gl, resources) {
 	// pyramid on top of vehicle
 
-	let pyramidMaterial = new MaterialSGNode(
-		new RenderSGNode(makePyramidRenderObject()));
+	let pyramidMaterial = new MaterialSGNode(new NiceTextureSGNode(resources.tex_metal, 0.2,
+		new RenderSGNode(makePyramidRenderObject())));
 
 	pyramidMaterial.ambient = [0.24725, 0.1995, 0.2745, 1];
 	pyramidMaterial.diffuse = [0.75164, 0.60648, 0.42648, 1];
 	pyramidMaterial.specular = [0.628281, 0.555802, 0.666065, 1];
-	pyramidMaterial.emission = [0.1, 0.2, 0.1, 1];
+	pyramidMaterial.emission = [0.1, 0.1, 0.1, 1];
 
-	pyramidNode = new TransformationSGNode(mat4.create(), pyramidMaterial);
+	let pyramidShaderNode = new ShaderSGNode(createProgram(gl, resources.vs_tex3d, resources.fs_tex3d), pyramidMaterial);
+
+	pyramidShaderNode.append(spotLight.light);
+	pyramidShaderNode.append(crystalLight.light);
+
+	pyramidNode = new TransformationSGNode(mat4.create(), pyramidShaderNode);
 
 	// vehicle itself
 
@@ -465,10 +471,15 @@ function makePyramidRenderObject() {
 	var position = [0, 0, 0.3, 0, 0.3, 0, -0.3, -0.3, 0, 0.3, -0.3, 0];
 	var normal = [0, 0, 1, 0, 0.707, 0.707, -0.534522, 0.801784, -0.267261, 0.426401, 0.639602, -0.639602];
 	var index = [0, 1, 2, 0, 2, 3, 0, 3, 1];
+	var texturecoordinates = [0.5, 1, 1, 0, 0, 0, 0, 1];
+	//var position = [-2, -2, 0, 2, -2, 0, 2, 2, 0, -2, 2, 0];
+	//var normal = [0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1];
+	//var texturecoordinates = [1, 1, 0, 1, 0, 0, 1, 0];
+	//var index = [0, 1, 2, 2, 3, 0];
 	return {
 		position: position,
-		normal: null,
-		texture: null,
+		normal: normal,
+		texture: texturecoordinates,
 		index: index
 	};
 }
