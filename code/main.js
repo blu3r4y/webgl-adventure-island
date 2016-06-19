@@ -219,7 +219,7 @@ function createSceneGraph(gl, resources) {
 	islandNode.append(makeCrystal(gl, resources));
 
 	// coordinate cross for debugging
-	islandNode.append(makeCoordinateCross(gl,  resources));
+	//islandNode.append(makeCoordinateCross(gl,  resources));
 
 	// vehicle
 	vehicleNode = makeVehicle(gl, resources);
